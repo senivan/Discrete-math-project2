@@ -4,12 +4,12 @@
     Elliptic curve domain parameters over Fp is defined by the tuple:
     T = (p, a, b, G, n, h)
     where:
-"secp192r1": {"p": 0xfffffffffffffffffffffffffffffffeffffffffffffffff,
-                                   "a": 0xfffffffffffffffffffffffffffffffefffffffffffffffc,
-                                   "b": 0x64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1,
-                                   "g": (0x188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012,
-                                         0x07192b95ffc8da78631011ed6b24cdd573f977a11e794811),
-                                   "n": 0xffffffffffffffffffffffff99def836146bc9b1b4d22831,
+"secp256r1": {"p": 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff,
+                                   "a": 0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc,
+                                   "b": 0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b,
+                                   "g": (0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296,
+                                         0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5),
+                                   "n": 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551,
                                    "h": 0x1},
 
 """
@@ -54,13 +54,13 @@ class Point:
             return self.__mul__(other)
         
 class ECC:
-    CONSTANTS = {"p": 0xfffffffffffffffffffffffffffffffeffffffffffffffff,
-                 "a": 0xfffffffffffffffffffffffffffffffefffffffffffffffc,
-                 "b": 0x64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1,
-                 "g": Point(0x188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012,
-                       0x07192b95ffc8da78631011ed6b24cdd573f977a11e794811),
-                 "n": 0xffffffffffffffffffffffff99def836146bc9b1b4d22831,
-                 "h": 0x1}
+    CONSTANTS = {"p": 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff,
+                                   "a": 0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc,
+                                   "b": 0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b,
+                                   "g": Point(0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296,
+                                         0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5),
+                                   "n": 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551,
+                                   "h": 0x1}
     @staticmethod
     def generate_keys():
         d = random.randint(1, ECC.CONSTANTS['n'] - 1)
@@ -82,7 +82,7 @@ class ECC:
 # than if we want to exchange the keys we use the ECC class to generate the shared secret
 
     
-def encrypt_message(message, public_key):
+def encrypt_message(message, symetric_key):
     pass
 
 def decrypt_message(message, private_key):
@@ -94,21 +94,19 @@ if __name__ == '__main__':
     print(my_d, my_Q)
     other_d, other_Q = ECC.generate_keys()
     print(other_d, other_Q)
-    # sym_key = ECC.derive_key_function(my_d, other_Q)
-    # print(sym_key)
-    # other_sym_key = ECC.derive_key_function(other_d, my_Q)
-    # print(other_sym_key)
     my_shared_secret = ECC.compute_shared_secret(my_d, other_Q)
     print(my_shared_secret)
     other_shared_secret = ECC.compute_shared_secret(other_d, my_Q)
     print(other_shared_secret)
 
     assert my_shared_secret == other_shared_secret
-
-    print("Test passed")
-
     symmetrical_key = ECC.derive_key_function(my_d, other_Q)
     print(symmetrical_key)
     other_symmetrical_key = ECC.derive_key_function(other_d, my_Q)
     print(other_symmetrical_key)
+    print(len(other_symmetrical_key))
+    print(len(symmetrical_key))
+    assert symmetrical_key == other_symmetrical_key
+    print("Test passed")
+
     
