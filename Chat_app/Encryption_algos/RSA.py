@@ -67,8 +67,8 @@ def generateRSAkeys():
     P = KeyGen.get_big_prime(128)
     Q = KeyGen.get_big_prime(128)
     while math.gcd((P-1)*(Q-1), E) != 1:
-        P = KeyGen.get_big_prime(256)
-        Q = KeyGen.get_big_prime(256)
+        P = KeyGen.get_big_prime(128)
+        Q = KeyGen.get_big_prime(128)
         
     PHI = (P-1)*(Q-1)
     N = P*Q
