@@ -26,6 +26,7 @@ class Server:
         self.db = sqlite3.connect(self.config.db_path)
         self.cursor = self.db.cursor()
         self.keys = self.get_keys()
+        self.users = {}
     
     def get_keys(self):
         if os.path.exists(self.config.public_key_path) and os.path.exists(self.config.private_key_path):
@@ -56,15 +57,15 @@ class Server:
 
     async def connect(self, websocket):
         if self.config.encrypt == "ECC":
-            # initiate ECC handshake
+            # initiate ECC-AES128 handshake
             key = await websocket.recv()
+            websocket.send(self.keys[0])
+            shared_key = ECC.ECC.compute_shared_secret(self.keys[1], key)
+
 
         elif self.config.encrypt == "RSA":
             # initiate RSA handshake
             pass
-        
-    
-    
 
 
 
