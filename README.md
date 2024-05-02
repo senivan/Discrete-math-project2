@@ -2,6 +2,9 @@
 ## App flowchart
 ![image](imgs/app_flowchart.png)
 
+## Database schema
+![image](imgs/db_diagram.png)
+
 ## Used Algorithms
 - ### ECC+AES-128 Algorithm
     Average time used:
