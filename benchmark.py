@@ -1,6 +1,7 @@
 import time
 # import Chat_app.Encryption_algos.ECC as ecc
 import Chat_app.Encryption_algos.RSA as rsa
+import Chat_app.Encryption_algos.ElGamal as elg
 import psutil
 import matplotlib.pyplot as plt
 
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     # @memory_decorator
     # def test():
     #     rsa.generateRSAkeys()
-    pub_key, priv_key = rsa.generateRSAkeys()
+    priv_key, pub_key = elg.generate_keys()
     print(f"Public key: {pub_key}")
     print(f"Private key: {priv_key}")
     data = get_file_data()
@@ -47,26 +48,26 @@ if __name__ == "__main__":
     times = []
     enc = []
     for size in sizes:
-        enc.append(rsa.encrypt(data[:size], pub_key))
-        @memory_decorator
+        enc.append(elg.encrypt(pub_key, data[:size]))
+        @time_decorator
         def test():
-            rsa.encrypt(data[:size], pub_key)
+            elg.encrypt(pub_key, data[:size])
         times.append(test())
     plt.plot(sizes, times)
     plt.xlabel("Data size")
-    plt.ylabel("Memory")
+    plt.ylabel("Time in seconds")
     plt.show()
 
     times.clear()
     for enc in enc:
-        @memory_decorator
+        @time_decorator
         def test1():
-            print(rsa.decrypt(enc, priv_key))
+            print(elg.decrypt(priv_key, enc[0], enc[1]))
         times.append(test1())
     
     plt.plot(sizes, times)
     plt.xlabel("Data size")
-    plt.ylabel("Memory")
+    plt.ylabel("Time in seconds")
     plt.show()
     
 
