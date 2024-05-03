@@ -1,5 +1,5 @@
 {
-    "encrypt":"ECC",
+    "encrypt":"RSA",
     "host":"localhost",
     "port":8000,
     "db_path":"server_utils/chat_db.db",

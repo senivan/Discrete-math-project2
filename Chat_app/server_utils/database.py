@@ -12,6 +12,7 @@ class Database:
                 id INTEGER PRIMARY KEY,
                 username TEXT NOT NULL,
                 password TEXT NOT NULL
+            )
                 ''')
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS Chats (
@@ -19,16 +20,18 @@ class Database:
                 participants TEXT NOT NULL,
                 chat_history_path TEXT NOT NULL, 
                 name TEXT NOT NULL
+            )
                 ''')
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS Messages (
                 id INTEGER PRIMARY KEY,
                 data TEXT NOT NULL,
                 time_sent TEXT NOT NULL,
-                sender_id FOREIGN KEY REFERENCES Users(id),
-                chat_id FOREIGN KEY REFERENCES Chats(id),
+                sender_id FOREIGN_KEY REFERENCES Users(id),
+                chat_id FOREIGN_KEY REFERENCES Chats(id),
                 type INTEGER NOT NULL,
                 hash TEXT NOT NULL
+            )
                 ''')
         self.db.commit()
     
@@ -127,6 +130,17 @@ class Database:
             id, data, time_sent, sender_id, chat_id, type, hash = msg
             res.append(Message(id, data, time_sent, sender_id, chat_id, type, hash))
         return res
+    
+    def check_user(self, username:str, password:str):
+        print(username, password)
+        self.cursor.execute('''
+            SELECT * FROM Users
+            WHERE username = ?
+            ''', (username,))
+        possible_user = self.cursor.fetchone()
+        if possible_user is None:
+            return False
+        return password == possible_user[2]
 
 class User:
     def __init__(self,id:int, username:str, password:str):

@@ -11,6 +11,32 @@ import sqlite3
 import json
 import os
 from Encryption_algos import ECC, RSA
+from server_utils import database
+
+class Keys:
+    def __init__(self, public_key, private_key):
+        self.public_key = public_key
+        self.private_key = private_key
+    
+    def get_public_key(self):
+        return self.public_key
+    
+    def get_private_key(self):
+        return self.private_key
+    @staticmethod
+    def from_tuple(tup):
+        return Keys(tup[0], tup[1])
+    
+    def __str__(self):
+        return f"Public key: {self.public_key}\nPrivate key: {self.private_key}"
+    
+    def __getitem__(self, key):
+        if key == 0:
+            return self.public_key
+        elif key == 1:
+            return self.private_key
+        else:
+            raise IndexError("Index out of range")
 class Config:
     def __init__(self, conf):
         self.encrypt = conf["encrypt"]
@@ -23,9 +49,9 @@ class Config:
 class Server:
     def __init__(self, config:'Config'):
         self.config = config
-        self.db = sqlite3.connect(self.config.db_path)
-        self.cursor = self.db.cursor()
-        self.keys = self.get_keys()
+        self.db = database.Database(self.config.db_path)
+        self.keys = Keys.from_tuple(self.get_keys())
+        print(f"Keys: {self.keys}")
         self.users = {}
     
     def get_keys(self):
@@ -54,18 +80,37 @@ class Server:
         start_server = websockets.serve(self.connect, self.config.host, self.config.port)
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
+    
+    async def send_message(self, message):
+        for user in self.users:
+            await user.send(message)
 
     async def connect(self, websocket):
+        print("Connected to client")
         if self.config.encrypt == "ECC":
             # initiate ECC-AES128 handshake
             key = await websocket.recv()
+            
             websocket.send(self.keys[0])
             shared_key = ECC.ECC.compute_shared_secret(self.keys[1], key)
 
 
         elif self.config.encrypt == "RSA":
             # initiate RSA handshake
-            pass
+            client_key = await websocket.recv()
+            client_key = json.loads(client_key)
+            print(f"Client key: {client_key}")
+            await websocket.send(json.dumps(self.keys[0]))
+            login_info = await websocket.recv()
+            login_info = RSA.decrypt(login_info, self.keys[1])
+            login_info = json.loads(login_info)
+            print(f"Login info: {login_info}")
+            if self.db.check_user(login_info["username"], login_info["password"]):
+                await websocket.send(RSA.encrypt("Success", client_key))
+
+            else:
+                await websocket.send(RSA.encrypt("Failed", client_key))
+
 
 
 
