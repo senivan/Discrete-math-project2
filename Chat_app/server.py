@@ -90,8 +90,13 @@ class Server:
             try:
                 message = await websocket.recv()
                 message = RSA.decrypt(message, self.keys[1])
+                message = json.loads(message)
+                if hashlib.sha256(message['data']).hexdigest() != message['hash']:
+                    print("Message has been tampered with")
+                    continue
+                self.db.create_message(message["data"], message["time_sent"], self.db.get_user_id(message["sender_username"]),0, message["type"], message["hash"])
                 # message = json.loads(message)
-                print(f"Received: {message}")
+                print(f"Received: {message['data']}")
                 await self.send_message(message)
             except websockets.exceptions.ConnectionClosedError:
                 print("Client disconnected")

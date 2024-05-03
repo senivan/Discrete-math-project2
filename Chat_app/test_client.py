@@ -3,6 +3,14 @@ import websockets
 import json
 from Encryption_algos import RSA
 import hashlib
+import datetime
+class Message:
+    def __init__(self, data, time_sent, sender_username, type, hash):
+        self.data = data
+        self.time_sent = time_sent
+        self.sender_username = sender_username
+        self.type = type
+        self.hash = hash
 class EncDecWrapper:
 
     @staticmethod
@@ -41,7 +49,8 @@ async def send_message(websocket):
     global server_public_key
     while True:
         message = input("Enter message: ")
-        await websocket.send(EncDecWrapper.encrypt(message, "RSA", public_key=server_public_key))
+        to_send = Message(message, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M"), username, "txt", hashlib.sha256(message.encode('utf-8')).hexdigest())
+        await websocket.send(EncDecWrapper.encrypt(json.dumps(to_send.__dict__), "RSA", public_key=server_public_key))
         await asyncio.sleep(0.1)
 
 async def connect_to_server():
@@ -51,6 +60,7 @@ async def connect_to_server():
         comm_protocol = json.loads(comm_protocol)
         global server_public_key 
         server_public_key = await EncDecWrapper.handshake(comm_protocol, websocket, public_key=public_key)
+        global username
         username = input("Enter username: ")
         password = input("Enter password: ")
         password = hashlib.sha256(password.encode('utf-8'), usedforsecurity=True).hexdigest()

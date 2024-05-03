@@ -141,6 +141,13 @@ class Database:
         if possible_user is None:
             return False
         return password == possible_user[2]
+    
+    def get_user_id(self, username:str):
+        self.cursor.execute('''
+            SELECT * FROM Users
+            WHERE username = ?
+            ''', (username,))
+        return self.cursor.fetchone()[0]
 
 class User:
     def __init__(self,id:int, username:str, password:str):
