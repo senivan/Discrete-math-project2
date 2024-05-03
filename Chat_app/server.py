@@ -87,6 +87,10 @@ class Server:
 
     async def connect(self, websocket):
         print("Connected to client")
+        await websocket.recv()
+        msg = json.dumps(self.config.encrypt)
+        print(f"Sending: {msg}")
+        await websocket.send(msg)
         if self.config.encrypt == "ECC":
             # initiate ECC-AES128 handshake
             key = await websocket.recv()
