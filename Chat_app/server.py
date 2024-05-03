@@ -7,7 +7,7 @@
 """
 import asyncio
 import websockets
-import sqlite3
+import hashlib
 import json
 import os
 from Encryption_algos import ECC, RSA
@@ -83,7 +83,19 @@ class Server:
     
     async def send_message(self, message):
         for user in self.users:
-            await user.send(message)
+            await user.send(RSA.encrypt(message, self.users[user][1]))
+    
+    async def handle_client(self, websocket):
+        while True:
+            try:
+                message = await websocket.recv()
+                message = RSA.decrypt(message, self.keys[1])
+                # message = json.loads(message)
+                print(f"Received: {message}")
+                await self.send_message(message)
+            except websockets.exceptions.ConnectionClosedError:
+                print("Client disconnected")
+                break
 
     async def connect(self, websocket):
         print("Connected to client")
@@ -111,10 +123,10 @@ class Server:
             print(f"Login info: {login_info}")
             if self.db.check_user(login_info["username"], login_info["password"]):
                 await websocket.send(RSA.encrypt("Success", client_key))
-
+                self.users[websocket] = (login_info["username"], client_key)
+                await self.handle_client(websocket)
             else:
                 await websocket.send(RSA.encrypt("Failed", client_key))
-
 
 
 
@@ -134,6 +146,7 @@ if __name__ == "__main__":
         data = fil.read()
         config = Config(json.loads(data))
     server = Server(config)
+    # server.db.add_user("test1", hashlib.sha256("test1".encode('utf-8')).hexdigest())
     server.run()
 
     

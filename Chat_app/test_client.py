@@ -3,7 +3,6 @@ import websockets
 import json
 from Encryption_algos import RSA
 import hashlib
-
 class EncDecWrapper:
 
     @staticmethod
@@ -32,11 +31,25 @@ class EncDecWrapper:
 
 
 public_key, private_key = RSA.generateRSAkeys()
+async def receive_message(websocket):
+    while True:
+        message = await websocket.recv()
+        print(f"Received: {EncDecWrapper.decrypt(message, 'RSA', private_key=private_key)}")
+        await asyncio.sleep(0.1)
+
+async def send_message(websocket):
+    global server_public_key
+    while True:
+        message = input("Enter message: ")
+        await websocket.send(EncDecWrapper.encrypt(message, "RSA", public_key=server_public_key))
+        await asyncio.sleep(0.1)
+
 async def connect_to_server():
     async with websockets.connect("ws://localhost:8000") as websocket:
         await websocket.send("Initiate handshake")
         comm_protocol = await websocket.recv()
         comm_protocol = json.loads(comm_protocol)
+        global server_public_key 
         server_public_key = await EncDecWrapper.handshake(comm_protocol, websocket, public_key=public_key)
         username = input("Enter username: ")
         password = input("Enter password: ")
@@ -44,7 +57,21 @@ async def connect_to_server():
         msg = EncDecWrapper.encrypt(json.dumps({"username": username, "password": password}), public_key=server_public_key, protocol=comm_protocol)
         await websocket.send(msg)
         response = await websocket.recv()
-        print(f"Response: {EncDecWrapper.decrypt(response, private_key=private_key, protocol=comm_protocol)}")
+        response = EncDecWrapper.decrypt(response, private_key=private_key, protocol=comm_protocol)
+        print(f"Response: {response}")
+        if response == "Success":
+            print("Login successful")
+            send_task = asyncio.create_task(send_message(websocket))
+            receive_task = asyncio.create_task(receive_message(websocket))
+            done, pending = await asyncio.wait([send_task, receive_task], return_when=asyncio.FIRST_COMPLETED)
+            for task in pending:
+                task.cancel()
+            
+            
+            
+        else:
+            print("Login failed")
+    
 
 
 
