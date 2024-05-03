@@ -55,8 +55,8 @@ class Database:
             SELECT * FROM Users
             WHERE username = ?
             ''', (username,))
-        username, password = self.cursor.fetchone()
-        return User(username, password)
+        id, username, password = self.cursor.fetchone()
+        return User(id, username, password)
 
     def add_chat(self, participants:str, chat_history_path:str, name:str):
         self.cursor.execute('''
@@ -83,8 +83,8 @@ class Database:
             SELECT * FROM Chats
             WHERE id = ?
             ''', (chat_id,))
-        participants, chat_history_path, name = self.cursor.fetchone()
-        return Chat(participants, chat_history_path, name)
+        id, participants, chat_history_path, name = self.cursor.fetchone()
+        return Chat(id, participants, chat_history_path, name)
 
     def create_message(self, data:str, time_sent:str, sender_id:int, chat_id:int, type:int, hash:str):
         self.cursor.execute('''
@@ -115,7 +115,7 @@ class Database:
         res = []
         for msg in self.cursor.fetchall():
             id, data, time_sent, sender_id, chat_id, type, hash = msg
-            res.append(Message(data, time_sent, sender_id, chat_id, type, hash))
+            res.append(Message(id, data, time_sent, sender_id, chat_id, type, hash))
         return res
     
     def get_all_chat_messages(self, chat_id:int):
@@ -125,11 +125,12 @@ class Database:
         res = []
         for msg in self.cursor.fetchall():
             id, data, time_sent, sender_id, chat_id, type, hash = msg
-            res.append(Message(data, time_sent, sender_id, chat_id, type, hash))
+            res.append(Message(id, data, time_sent, sender_id, chat_id, type, hash))
         return res
 
 class User:
-    def __init__(self, username:str, password:str):
+    def __init__(self,id:int, username:str, password:str):
+        self.id = id
         self.username = username
         self.password = password
     def __str__(self):
@@ -138,18 +139,41 @@ class User:
         return self.__str__()
 
 class Chat:
-    def __init__(self, participants:str, chat_history_path:str, name:str):
-        self.participants = participants
+    def __init__(self, id,  participants:list, chat_history_path:str, name:str):
         self.chat_history_path = chat_history_path
+        self.id = id
         self.name = name
+        self.participants = ""
+        for participant in participants:
+            self.participants += f"{participant};"
     def __str__(self):
         return f"Participants: {self.participants}, Chat history path: {self.chat_history_path}"
     def __repr__(self):
         return self.__str__()
     
+    def add_participant(self, participant:str):
+        self.participants += f"{participant};"
+    def remove_participant(self, participant:str):
+        self.participants = self.participants.replace(f"{participant};", "")
+    
+    def get_participants(self):
+        return self.participants.split(";")
+    
+    def change_name(self, name:str):
+        self.name = name
+    
+    def update_self(self, db:'Database'):
+        db.cursor.execute('''
+            UPDATE Chats
+            SET participants = ?, chat_history_path = ?, name = ?
+            WHERE id = ?
+            ''', (self.participants, self.chat_history_path, self.name, self.id))
+        db.db.commit()
+    
 class Message:
-    def __init__(self, data:str, time_sent:str, sender_id:int, chat_id:int, type:int, hash:str):
+    def __init__(self,id:int, data:str, time_sent:str, sender_id:int, chat_id:int, type:int, hash:str):
         self.data = data
+        self.id = id
         self.time_sent = time_sent
         self.sender_id = sender_id
         self.chat_id = chat_id
