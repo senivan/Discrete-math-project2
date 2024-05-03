@@ -92,6 +92,14 @@ class Database:
             VALUES (?, ?, ?, ?, ?, ?)
             ''', (data, time_sent, sender_id, chat_id, type, hash))
         self.db.commit()
+    
+    def create_message_obj(self, message:'Message'):
+        self.cursor.execute('''
+            INSERT INTO Messages (data, time_sent, sender_id, chat_id, type, hash)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ''', (message.data, message.time_sent, message.sender_id, message.chat_id, message.type, message.hash))
+        self.db.commit()
+
     def delete_message(self, message_id:int):
         self.cursor.execute('''
             DELETE FROM Messages
@@ -104,15 +112,21 @@ class Database:
             SELECT * FROM Messages
             WHERE chat_id = ?
             ''', (chat_id,))
-        return self.cursor.fetchall()
+        res = []
+        for msg in self.cursor.fetchall():
+            id, data, time_sent, sender_id, chat_id, type, hash = msg
+            res.append(Message(data, time_sent, sender_id, chat_id, type, hash))
+        return res
     
     def get_all_chat_messages(self, chat_id:int):
         self.cursor.execute('''
             SELECT * FROM Messages where chat_id = ?
             ''', (chat_id,))
-        return self.cursor.fetchall()
-    
-    
+        res = []
+        for msg in self.cursor.fetchall():
+            id, data, time_sent, sender_id, chat_id, type, hash = msg
+            res.append(Message(data, time_sent, sender_id, chat_id, type, hash))
+        return res
 
 class User:
     def __init__(self, username:str, password:str):
