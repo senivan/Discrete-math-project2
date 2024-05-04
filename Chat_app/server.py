@@ -16,30 +16,32 @@ from server_utils import database
 class Keys:
     @staticmethod
     def get_public_key(protocol):
-        secret = json.loads(open("server_util/server_secret.json", "r").read())
+        secret = json.loads(open("./server_utils/server_secret.json", "r").read())
         if protocol not in secret.keys():
             if protocol == "RSA":
                 pub, priv = RSA.generateRSAkeys()
             if protocol == "ECC":
                 pub, priv = ECC.ECC.generate_keys()
+            secret[protocol] = {}
             secret[protocol]["public_key"] = pub
             secret[protocol]["private_key"] = priv
-            with open("server_util/server_secret.json", "w") as file:
+            with open("./server_utils/server_secret.json", "w") as file:
                 file.write(json.dumps(secret))
             return pub
         else:
             return secret[protocol]["public_key"]
     @staticmethod
     def get_private_key(protocol):
-        secret = json.loads(open("server_util/server_secret.json", "r").read())
+        secret = json.loads(open("./server_utils/server_secret.json", "r").read())
         if protocol not in secret.keys():
             if protocol == "RSA":
                 pub, priv = RSA.generateRSAkeys()
             if protocol == "ECC":
                 pub, priv = ECC.ECC.generate_keys()
+            secret[protocol] = {}
             secret[protocol]["public_key"] = pub
             secret[protocol]["private_key"] = priv
-            with open("server_util/server_secret.json", "w") as file:
+            with open("./server_utils/server_secret.json", "w") as file:
                 file.write(json.dumps(secret))
             return priv
         else:
@@ -58,6 +60,7 @@ class Server:
         self.db = database.Database(self.config.db_path)
         self.users = {}
         self.keys = (Keys.get_public_key(self.config.encrypt), Keys.get_private_key(self.config.encrypt))
+        print(self.keys[0], self.keys[1])
 
     def run(self):
         start_server = websockets.serve(self.connect, self.config.host, self.config.port, ping_interval=30, ping_timeout=120)

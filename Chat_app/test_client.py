@@ -42,7 +42,9 @@ public_key, private_key = RSA.generateRSAkeys()
 async def receive_message(websocket):
     while True:
         message = await websocket.recv()
-        print(f"Received: {EncDecWrapper.decrypt(message, 'RSA', private_key=private_key)}")
+        message = EncDecWrapper.decrypt(message, "RSA", private_key=private_key)
+        message = json.loads(message)
+        print(f"Received: {message['data']} from {message['sender_username']} at {message['time_sent']}")
         await asyncio.sleep(0.1)
 
 async def send_message(websocket):
