@@ -162,3 +162,4 @@ cython_debug/
 *.db
 *.pbm
 *.pem
+server_secret.json

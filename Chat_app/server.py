@@ -7,65 +7,118 @@
 """
 import asyncio
 import websockets
-import sqlite3
+import hashlib
 import json
 import os
 from Encryption_algos import ECC, RSA
+from server_utils import database
+
+class Keys:
+    @staticmethod
+    def get_public_key(protocol):
+        secret = json.loads(open("./server_utils/server_secret.json", "r").read())
+        if protocol not in secret.keys():
+            if protocol == "RSA":
+                pub, priv = RSA.generateRSAkeys()
+            if protocol == "ECC":
+                pub, priv = ECC.ECC.generate_keys()
+            secret[protocol] = {}
+            secret[protocol]["public_key"] = pub
+            secret[protocol]["private_key"] = priv
+            with open("./server_utils/server_secret.json", "w") as file:
+                file.write(json.dumps(secret))
+            return pub
+        else:
+            return secret[protocol]["public_key"]
+    @staticmethod
+    def get_private_key(protocol):
+        secret = json.loads(open("./server_utils/server_secret.json", "r").read())
+        if protocol not in secret.keys():
+            if protocol == "RSA":
+                pub, priv = RSA.generateRSAkeys()
+            if protocol == "ECC":
+                pub, priv = ECC.ECC.generate_keys()
+            secret[protocol] = {}
+            secret[protocol]["public_key"] = pub
+            secret[protocol]["private_key"] = priv
+            with open("./server_utils/server_secret.json", "w") as file:
+                file.write(json.dumps(secret))
+            return priv
+        else:
+            return secret[protocol]["private_key"]
+
 class Config:
     def __init__(self, conf):
         self.encrypt = conf["encrypt"]
         self.db_path = conf["db_path"]
         self.host = conf["host"]
         self.port = conf["port"]
-        self.public_key_path = conf["public_key_path"]
-        self.private_key_path = conf["private_key_path"]
 
 class Server:
     def __init__(self, config:'Config'):
         self.config = config
-        self.db = sqlite3.connect(self.config.db_path)
-        self.cursor = self.db.cursor()
-        self.keys = self.get_keys()
+        self.db = database.Database(self.config.db_path)
         self.users = {}
-    
-    def get_keys(self):
-        if os.path.exists(self.config.public_key_path) and os.path.exists(self.config.private_key_path):
-            with open(self.config.public_key_path, "r", encoding='utf-8') as file:
-                public_key = json.loads(file.read())
-            with open(self.config.private_key_path, "r", encoding='utf-8') as file:
-                private_key = json.loads(file.read())
-            return (public_key, private_key)
-        else:
-            if self.config.encrypt == "ECC":
-                keys = ECC.ECC.generate_keys()
-            elif self.config.encrypt == "RSA":
-                keys = RSA.generateRSAkeys()
-            with open(self.config.public_key_path, "w") as file:
-                file.write(json.dumps(keys[0]))
-            with open(self.config.private_key_path, "w") as file:
-                if self.config.encrypt == "ECC":
-                    file.write(json.dumps(keys[1], cls=ECC.PointEncoder))
-                else:
-                    file.write(json.dumps(keys[1]))
-            return keys
-        
+        self.keys = (Keys.get_public_key(self.config.encrypt), Keys.get_private_key(self.config.encrypt))
+        print(self.keys[0], self.keys[1])
 
     def run(self):
-        start_server = websockets.serve(self.connect, self.config.host, self.config.port)
+        start_server = websockets.serve(self.connect, self.config.host, self.config.port, ping_interval=30, ping_timeout=120)
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
+    
+    async def send_message(self, message):
+        message = json.dumps(message)
+        for user in self.users:
+            await user.send(RSA.encrypt(message, self.users[user][1]))
+    
+    async def handle_client(self, websocket):
+        while True:
+            try:
+                message = await websocket.recv()
+                message = RSA.decrypt(message, self.keys[1])
+                message = json.loads(message)
+                if hashlib.sha256(message['data'].encode('utf-8')).hexdigest() != message['hash']:
+                    print("Message has been tampered with")
+                    continue
+                self.db.create_message(message["data"], message["time_sent"], self.db.get_user_id(message["sender_username"]),0, message["type"], message["hash"])
+                # message = json.loads(message)
+                print(f"Received: {message['data']}")
+                await self.send_message(message)
+            except websockets.exceptions.ConnectionClosedError:
+                print("Client disconnected")
+                break
 
     async def connect(self, websocket):
+        print("Connected to client")
+        await websocket.recv()
+        msg = json.dumps(self.config.encrypt)
+        print(f"Sending: {msg}")
+        await websocket.send(msg)
         if self.config.encrypt == "ECC":
             # initiate ECC-AES128 handshake
             key = await websocket.recv()
+            
             websocket.send(self.keys[0])
             shared_key = ECC.ECC.compute_shared_secret(self.keys[1], key)
 
 
         elif self.config.encrypt == "RSA":
             # initiate RSA handshake
-            pass
+            client_key = await websocket.recv()
+            client_key = json.loads(client_key)
+            print(f"Client key: {client_key}")
+            await websocket.send(json.dumps(self.keys[0]))
+            login_info = await websocket.recv()
+            login_info = RSA.decrypt(login_info, self.keys[1])
+            login_info = json.loads(login_info)
+            print(f"Login info: {login_info}")
+            if self.db.check_user(login_info["username"], login_info["password"]):
+                await websocket.send(RSA.encrypt("Success", client_key))
+                self.users[websocket] = (login_info["username"], client_key)
+                await self.handle_client(websocket)
+            else:
+                await websocket.send(RSA.encrypt("Failed", client_key))
 
 
 
@@ -85,6 +138,7 @@ if __name__ == "__main__":
         data = fil.read()
         config = Config(json.loads(data))
     server = Server(config)
+    # server.db.add_user("test1", hashlib.sha256("test1".encode('utf-8')).hexdigest())
     server.run()
 
     
