@@ -385,15 +385,16 @@ class AES128:
 
 if __name__ == '__main__':
     my_d, my_Q = ECC.generate_keys()
-    print(my_d, my_Q)
+    # print(my_d, my_Q)f
     other_d, other_Q = ECC.generate_keys()
-    print(other_d, other_Q)
+    # print(other_d, other_Q)
     my_shared_secret = ECC.compute_shared_secret(my_d, other_Q)
-    print(my_shared_secret)
+    # print(my_shared_secret)
     other_shared_secret = ECC.compute_shared_secret(other_d, my_Q)
-    print(other_shared_secret)
+    # print(other_shared_secret)
 
     assert my_shared_secret == other_shared_secret
+    print(type(my_d), type(other_Q))
     symmetrical_key = ECC.derive_key_function(my_d, other_Q)
     print(symmetrical_key)
     other_symmetrical_key = ECC.derive_key_function(other_d, my_Q)
