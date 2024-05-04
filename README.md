@@ -5,8 +5,41 @@
 ## Database schema
 ![image](imgs/db_diagram.png)
 
-## Used Algorithms
+## How to run
+- ### Run pipenv
+    ```bash
+    pipenv shell
+    ```
+- ### Install dependencies
+    ```bash
+    pipenv install
+    ```
+- ### Run the app
+    ```bash
+    python server.py
+    ```
+- ### Run the test client
+    ```bash
+    python client.py
+    ```
+
+## Config file
+In the `server_config.json` file, you can change the following parameters:
+- 'encrypt':The encryption algorithm to use. It can be one of the following:
+    - 'ECC+AES-128'
+    - 'RSA'
+- 'port': The port to run the server on. Default is 8000
+- 'host': The host to run the server on. Default is 'localhost'
+- 'db': The database file to use. Default is 'db.sqlite3'
+- 'debug_level': The debug level to use. Default is 'INFO'
+
+
+## Encryption algorithms used
 - ### ECC+AES-128 Algorithm
+    This algorithm uses eliptic curve cryptography to generate key pairs and then generate a symetrci shared key. The shared key is then used to encrypt the message using AES-128 algorithm.
+    It's cons are that it's slower than the other algorithms and uses more memory. But it's more secure than the other algorithms.
+    For example 256-bit ECC key is equivalent to 3072-bit RSA key.
+
     Average time used:
     - Encryption: ![image](imgs/ECC_enc_time.png)
     - Decryption: ![image](imgs/ECC_dec_time.png)
@@ -17,6 +50,8 @@
     - Decryption: ![image](imgs/ECC_dec_memory.png)
     - Key generation: 16.384 bfytes
 - ### RSA algorithm
+    Here we useRSA to generate key pairs and then encrypt the message using the public key. The message is then decrypted using the private key. It's faster than ECC+AES-128 but less secure.
+    It's one of the most used algorithms in the world. It relies on the difficulty of factoring large numbers. However, with the advent of quantum computers, it's security is in question, because of Shor's algorithm.
     Average time used:
     - Encryption: ![image](imgs/RSA_enc_time.png)
     - Decryption: ![image](imgs/RSA_dec_time.png)
