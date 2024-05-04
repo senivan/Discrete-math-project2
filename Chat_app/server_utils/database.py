@@ -148,6 +148,18 @@ class Database:
             WHERE username = ?
             ''', (username,))
         return self.cursor.fetchone()[0]
+    
+    def cleanup(self):
+        self.cursor.execute('''
+            DELETE FROM Users
+            ''')
+        self.cursor.execute('''
+            DELETE FROM Chats
+            ''')
+        self.cursor.execute('''
+            DELETE FROM Messages
+            ''')
+        self.db.commit()
 
 class User:
     def __init__(self,id:int, username:str, password:str):
