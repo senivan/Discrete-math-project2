@@ -404,8 +404,8 @@ if __name__ == '__main__':
     assert symmetrical_key == other_symmetrical_key
     print("Test passed")
     print("Encrypting the message")
-    key = symmetrical_key[:16]
-    message = "Attack at dawn !"
+    key = b'\x8c\xcf\xd3\x90\x98\xf6\x02\xaf_\x14W\xea.\xe5\xed#'
+    message = "HI"
     encrypted = AES128.encrypt(key, message.encode())
     print(encrypted)
     decrypted = AES128.decrypt(key, encrypted)

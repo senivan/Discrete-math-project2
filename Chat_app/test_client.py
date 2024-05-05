@@ -66,6 +66,7 @@ async def receive_message(websocket):
             message = EncDecWrapper.decrypt(message, comm_protocol, private_key=private_key)
         if comm_protocol == "ECC":
             message = EncDecWrapper.decrypt(message, comm_protocol, public_key=server_public_key)
+            message = message.strip(b'\x00').decode()
         message = json.loads(message)
         print(f"Received: {message['data']} from {message['sender_username']} at {message['time_sent']}")
         await asyncio.sleep(0.1)
@@ -75,7 +76,7 @@ async def send_message(websocket):
     while True:
         message = input("Enter message: ")
         to_send = Message(message, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M"), username, "txt", hashlib.sha256(message.encode('utf-8')).hexdigest())
-        await websocket.send(EncDecWrapper.encrypt(json.dumps(to_send.__dict__), "RSA", public_key=server_public_key))
+        await websocket.send(EncDecWrapper.encrypt(json.dumps(to_send.__dict__), comm_protocol, public_key=server_public_key))
         await asyncio.sleep(0.1)
 
 async def connect_to_server():

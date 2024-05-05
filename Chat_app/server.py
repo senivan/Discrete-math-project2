@@ -115,18 +115,28 @@ class Server:
     async def send_message(self, message):
         message = json.dumps(message)
         for user in self.users:
-            await user.send(RSA.encrypt(message, self.users[user][1]))
+            if self.config.encrypt == "RSA":
+                await user.send(RSA.encrypt(message, self.users[user][1]))
+            elif self.config.encrypt == "ECC":
+                await user.send(ECC.AES128.encrypt(self.users[user][1], message.encode('utf-8')))
     
     async def handle_client(self, websocket):
         while True:
             try:
                 message = await websocket.recv()
-                message = RSA.decrypt(message, self.keys[1])
+                if self.config.encrypt == "RSA":
+                    message = RSA.decrypt(message, self.keys[1])
+                elif self.config.encrypt == "ECC":
+                    message = ECC.AES128.decrypt(self.users[websocket][1], message)
+                    message = message.strip(b'\x00').decode('utf-8')
                 message = json.loads(message)
                 if hashlib.sha256(message['data'].encode('utf-8')).hexdigest() != message['hash']:
                     print("Message has been tampered with")
                     continue
-                self.db.create_message(RSA.encrypt(message['data'], self.keys[0]), message["time_sent"], self.db.get_user_id(message["sender_username"]),0, message["type"], message["hash"])
+                if self.config.encrypt == "RSA":
+                    self.db.create_message(RSA.encrypt(message['data'], self.keys[0]), message["time_sent"], self.db.get_user_id(message["sender_username"]),0, message["type"], message["hash"])
+                elif self.config.encrypt == "ECC":
+                    self.db.create_message(ECC.AES128.encrypt(self.users[websocket][1], message['data'].encode('utf-8')), message["time_sent"], self.db.get_user_id(message["sender_username"]),0, message["type"], message["hash"])
                 # message = json.loads(message)
                 print(f"Received: {message['data']}")
                 await self.send_message(message)
