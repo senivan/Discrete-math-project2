@@ -28,6 +28,7 @@ In the `server_config.json` file, you can change the following parameters:
 - 'encrypt':The encryption algorithm to use. It can be one of the following:
     - 'ECC+AES-128(ECC)'
     - 'RSA'
+    - 'ElGamal'
 - 'port': The port to run the server on. Default is 8000
 - 'host': The host to run the server on. Default is 'localhost'
 - 'db': The database file to use. Default is 'db.sqlite3'
