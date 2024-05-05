@@ -26,7 +26,7 @@
 ## Config file
 In the `server_config.json` file, you can change the following parameters:
 - 'encrypt':The encryption algorithm to use. It can be one of the following:
-    - 'ECC+AES-128'
+    - 'ECC+AES-128(ECC)'
     - 'RSA'
 - 'port': The port to run the server on. Default is 8000
 - 'host': The host to run the server on. Default is 'localhost'
@@ -40,6 +40,9 @@ In the `server_config.json` file, you can change the following parameters:
     It's cons are that it's slower than the other algorithms and uses more memory. But it's more secure than the other algorithms.
     For example 256-bit ECC key is equivalent to 3072-bit RSA key.
 
+    Handshake process:
+    ![image](imgs/ecc_handshake.png)
+
     Average time used:
     - Encryption: ![image](imgs/ECC_enc_time.png)
     - Decryption: ![image](imgs/ECC_dec_time.png)
@@ -52,6 +55,10 @@ In the `server_config.json` file, you can change the following parameters:
 - ### RSA algorithm
     Here we useRSA to generate key pairs and then encrypt the message using the public key. The message is then decrypted using the private key. It's faster than ECC+AES-128 but less secure.
     It's one of the most used algorithms in the world. It relies on the difficulty of factoring large numbers. However, with the advent of quantum computers, it's security is in question, because of Shor's algorithm.
+
+    Handshake process:
+    ![image](imgs/rsa_handshake.png)
+
     Average time used:
     - Encryption: ![image](imgs/RSA_enc_time.png)
     - Decryption: ![image](imgs/RSA_dec_time.png)
@@ -63,6 +70,11 @@ In the `server_config.json` file, you can change the following parameters:
     - Key generation: < 3 
 
 - ### ElGamal algorithm
+    This algorithm is based on the Diffie-Hellman key exchange algorithm and the problom of computing discrete logorithms of cyclic groups. It's less secure than RSA and ECC+AES-128 but faster.
+
+    Handshake process:
+    ![image](imgs/elgamal_handshake.png)
+
     Average time used:
     - Encryption: ![image](imgs/ElGamal_enc_time.png)
     - Decryption: ![image](imgs/ElGamal_dec_time.png)

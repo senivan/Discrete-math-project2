@@ -21,7 +21,7 @@ def generate_keys():
         return generate_keys()
     # Public key
     q = random.randint(1, CYC_GROUP - 1)
-    g = 2
+    g = random.randint(2, q)
     h = pow(g, a, CYC_GROUP)
     return a, (q, h, g)
 
