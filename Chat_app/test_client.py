@@ -1,7 +1,7 @@
 import asyncio
 import websockets
 import json
-from Encryption_algos import RSA, ECC
+from Encryption_algos import RSA, ECC, ElGamal
 import hashlib
 import datetime
 class Message:
@@ -19,20 +19,28 @@ class EncDecWrapper:
             return RSA.encrypt(message, kwargs["public_key"])
         if protocol == "ECC":
             return ECC.AES128.encrypt(kwargs["public_key"][:16], message.encode('utf-8'))
-    
+        if protocol == "ElGamal":
+            res = ElGamal.encrypt(kwargs["public_key"].values(), message)
+            return json.dumps(res)
     @staticmethod
     def decrypt(encoded, protocol, **kwargs):
         if protocol == "RSA":
             return RSA.decrypt(encoded, kwargs["private_key"])
         if protocol == "ECC":
-            return ECC.AES128.decrypt(kwargs["public_key"][:16], encoded)
-    
+            res = ECC.AES128.decrypt(kwargs["public_key"][:16], encoded)
+            return res.decode('utf-8').strip('\x00')
+        if protocol == "ElGamal":
+            val = json.loads(encoded)
+            c1, c2 = (val[0], val[1])
+            return ElGamal.decrypt(kwargs["private_key"], c1, c2)
     @staticmethod
     def generate_keys(protocol):
         if protocol == "RSA":
             return RSA.generateRSAkeys()
         if protocol == "ECC":
             return ECC.ECC.generate_keys()
+        if protocol == "ElGamal":
+            return ElGamal.generate_keys()
     
     @staticmethod
     async def handshake(protocol, websocket, **kwargs):
@@ -55,6 +63,12 @@ class EncDecWrapper:
             shared_secret = ECC.ECC.derive_key_function(priv, server_)
             print(f"Shared secret: {shared_secret}")
             return shared_secret
+        if protocol == "ElGamal":
+            msg = json.dumps(kwargs["public_key"])
+            await websocket.send(msg)
+            server_ = await websocket.recv()
+            server_ = json.loads(server_)
+            return server_
 
 
 
@@ -62,11 +76,7 @@ async def receive_message(websocket):
 
     while True:
         message = await websocket.recv()
-        if comm_protocol == "RSA":
-            message = EncDecWrapper.decrypt(message, comm_protocol, private_key=private_key)
-        if comm_protocol == "ECC":
-            message = EncDecWrapper.decrypt(message, comm_protocol, public_key=server_public_key)
-            message = message.strip(b'\x00').decode()
+        message = EncDecWrapper.decrypt(message, comm_protocol, private_key=private_key, public_key=server_public_key)
         message = json.loads(message)
         print(f"Received: {message['data']} from {message['sender_username']} at {message['time_sent']}")
         await asyncio.sleep(0.1)
@@ -89,6 +99,8 @@ async def connect_to_server():
             public_key, private_key = EncDecWrapper.generate_keys("RSA")
         if comm_protocol == "ECC":
             private_key, public_key = EncDecWrapper.generate_keys("ECC")
+        if comm_protocol == "ElGamal":
+            private_key, public_key = EncDecWrapper.generate_keys("ElGamal")
         global server_public_key 
         server_public_key = await EncDecWrapper.handshake(comm_protocol, websocket, public_key=public_key, private_key=private_key)
         print(f"Server public key: {server_public_key}")
@@ -97,11 +109,13 @@ async def connect_to_server():
         password = input("Enter password: ")
         password = hashlib.sha256(password.encode('utf-8'), usedforsecurity=True).hexdigest()
         msg = EncDecWrapper.encrypt(json.dumps({"username": username, "password": password}), public_key=server_public_key, protocol=comm_protocol)
+        print(f"Message: {msg}")
         await websocket.send(msg)
         response = await websocket.recv()
         response = EncDecWrapper.decrypt(response, private_key=private_key, protocol=comm_protocol, public_key=server_public_key)
         print(f"Response: {response}")
-        response = response.decode().strip('\x00')
+        if comm_protocol == "ECC":
+            response = response.decode('utf-8').strip('\x00')
         if response == "Success":
             print("Login successful")
             send_task = asyncio.create_task(send_message(websocket))

@@ -20,13 +20,21 @@ class EncDecWrapper:
             return RSA.encrypt(message, kwargs["public_key"])
         if protocol == "ECC":
             return ECC.AES128.encrypt(kwargs["shared_key"], message.encode('utf-8'))
-    
+        if protocol == "ElGamal":
+            pub = kwargs["public_key"]
+            if isinstance(pub, dict):
+                pub = pub.values()
+            return json.dumps(ElGamal.encrypt(pub, message))
     @staticmethod
     def decrypt(encoded, protocol, **kwargs):
         if protocol == "RSA":
             return RSA.decrypt(encoded, kwargs["private_key"])
         if protocol == "ECC":
-            return ECC.AES128.decrypt(kwargs["shared_key"], encoded)
+            res = ECC.AES128.decrypt(kwargs["shared_key"], encoded)
+            return res.decode('utf-8').strip('\x00')
+        if protocol == "ElGamal":
+            c1, c2 = json.loads(encoded)
+            return ElGamal.decrypt(kwargs["private_key"], c1, c2)
     
     @staticmethod
     async def handshake(protocol, websocket, **kwargs):
@@ -52,7 +60,10 @@ class EncDecWrapper:
             shared_secret = ECC.ECC.derive_key_function(kwargs["private_key"], client_key)
             return shared_secret
         if protocol == "ElGamal":
-            
+            client_public_key = await websocket.recv()
+            client_public_key = json.loads(client_public_key)
+            await websocket.send(json.dumps(kwargs["public_key"]))
+            return client_public_key
 
 class Keys:
     @staticmethod
@@ -72,8 +83,8 @@ class Keys:
             if protocol == "ECC":
                 secret[protocol]["public_key"] = {"x":pub.x, "y":pub.y}
             if protocol == "ElGamal":
-                secret[protocol]["public_key"] = pub
-                secret[protocol]["private_key"] = {"q":priv[0], "h":priv[1], "g":priv[2]}
+                secret[protocol]["private_key"] = priv
+                secret[protocol]["public_key"] = {"q":pub[0], "h":pub[1], "g":pub[2]}
             with open("./server_utils/server_secret.json", "w") as file:
                 file.write(json.dumps(secret, indent=4))
             return pub
@@ -127,29 +138,20 @@ class Server:
     async def send_message(self, message):
         message = json.dumps(message)
         for user in self.users:
-            if self.config.encrypt == "RSA":
-                await user.send(RSA.encrypt(message, self.users[user][1]))
-            elif self.config.encrypt == "ECC":
-                await user.send(ECC.AES128.encrypt(self.users[user][1], message.encode('utf-8')))
+            await user.send(EncDecWrapper.encrypt(message, self.config.encrypt, public_key=self.users[user][1], shared_key=self.users[user][1] if self.config.encrypt == "ECC" else None))
     
     async def handle_client(self, websocket):
         while True:
             try:
                 message = await websocket.recv()
-                if self.config.encrypt == "RSA":
-                    message = RSA.decrypt(message, self.keys[1])
-                elif self.config.encrypt == "ECC":
-                    message = ECC.AES128.decrypt(self.users[websocket][1], message)
-                    message = message.strip(b'\x00').decode('utf-8')
+                message = EncDecWrapper.decrypt(message, self.config.encrypt, private_key=self.keys[1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None)
                 message = json.loads(message)
+                print(message)
                 if hashlib.sha256(message['data'].encode('utf-8')).hexdigest() != message['hash']:
                     print("Message has been tampered with")
                     continue
-                if self.config.encrypt == "RSA":
-                    self.db.create_message(RSA.encrypt(message['data'], self.keys[0]), message["time_sent"], self.db.get_user_id(message["sender_username"]),0, message["type"], message["hash"])
-                elif self.config.encrypt == "ECC":
-                    self.db.create_message(ECC.AES128.encrypt(self.users[websocket][1], message['data'].encode('utf-8')), message["time_sent"], self.db.get_user_id(message["sender_username"]),0, message["type"], message["hash"])
-                # message = json.loads(message)
+                # msg = EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash']
+                self.db.create_message(EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash'])
                 print(f"Received: {message['data']}")
                 await self.send_message(message)
             except websockets.exceptions.ConnectionClosedError:
@@ -165,20 +167,27 @@ class Server:
             shared_secret = await EncDecWrapper.handshake("ECC", websocket, public_key=self.keys[0], private_key=self.keys[1])
             shared_secret = shared_secret[:16]
             print(len(shared_secret))
+        if self.config.encrypt == "ElGamal":
+            client_key = await EncDecWrapper.handshake("ElGamal", websocket, public_key=self.keys[0])
         login_info = await websocket.recv()
         if self.config.encrypt == "RSA":
             login_info = EncDecWrapper.decrypt(login_info, "RSA", private_key=self.keys[1])
         if self.config.encrypt == "ECC":
             login_info = EncDecWrapper.decrypt(login_info, "ECC", shared_key=shared_secret)
-        login_info = login_info.decode('utf-8').strip('\x00')
+            login_info = login_info.decode('utf-8').strip('\x00')
+        if self.config.encrypt == "ElGamal":
+            login_info = EncDecWrapper.decrypt(login_info, "ElGamal", private_key=self.keys[1])
         login_info = json.loads(login_info)
 
         if self.db.check_user(login_info['username'], login_info['password']):
-            await websocket.send(EncDecWrapper.encrypt("Success", self.config.encrypt, public_key=client_key, shared_key=shared_secret))
+            msg = EncDecWrapper.encrypt("Success", self.config.encrypt, public_key=client_key, shared_key=shared_secret)
+            await websocket.send(msg)
             if self.config.encrypt == "RSA":
                 self.users[websocket] = (login_info['username'], client_key)
             if self.config.encrypt == "ECC":
                 self.users[websocket] = (login_info['username'], shared_secret)
+            if self.config.encrypt == "ElGamal":
+                self.users[websocket] = (login_info['username'], client_key)
             print(f"User {login_info['username']} connected")
             await self.handle_client(websocket)
         else:

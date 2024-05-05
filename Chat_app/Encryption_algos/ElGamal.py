@@ -48,6 +48,6 @@ def decrypt(private_key, p, ms):
     s = pow(p, a, CYC_GROUP)
     return "".join([chr(int(ms[i] / s)) for i in range(0, len(ms))])
 
-keys = generate_keys()
-c1, c2 = encrypt(keys[1], 'Hello, world!')
-print(decrypt(keys[0], c1, c2))
+# keys = generate_keys()
+# c1, c2 = encrypt(keys[1], 'Hello, world!')
+# print(decrypt(keys[0], c1, c2))
