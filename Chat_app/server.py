@@ -10,7 +10,7 @@ import websockets
 import hashlib
 import json
 import os
-from Encryption_algos import ECC, RSA
+from Encryption_algos import ECC, RSA, ElGamal
 from server_utils import database
 
 class EncDecWrapper:
@@ -51,6 +51,8 @@ class EncDecWrapper:
 
             shared_secret = ECC.ECC.derive_key_function(kwargs["private_key"], client_key)
             return shared_secret
+        if protocol == "ElGamal":
+            
 
 class Keys:
     @staticmethod
@@ -61,12 +63,17 @@ class Keys:
                 pub, priv = RSA.generateRSAkeys()
             if protocol == "ECC":
                 priv, pub = ECC.ECC.generate_keys()
+            if protocol == "ElGamal":
+                priv, pub = ElGamal.generate_keys()
             secret[protocol] = {}
             secret[protocol]["private_key"] = priv
             if protocol == "RSA":
                 secret[protocol]["public_key"] = pub
             if protocol == "ECC":
                 secret[protocol]["public_key"] = {"x":pub.x, "y":pub.y}
+            if protocol == "ElGamal":
+                secret[protocol]["public_key"] = pub
+                secret[protocol]["private_key"] = {"q":priv[0], "h":priv[1], "g":priv[2]}
             with open("./server_utils/server_secret.json", "w") as file:
                 file.write(json.dumps(secret, indent=4))
             return pub
@@ -80,12 +87,17 @@ class Keys:
                 pub, priv = RSA.generateRSAkeys()
             if protocol == "ECC":
                 priv, pub = ECC.ECC.generate_keys()
+            if protocol == "ElGamal":
+                priv, pub = ElGamal.generate_keys()
             secret[protocol] = {}
             secret[protocol]["private_key"] = priv
             if protocol == "RSA":
                 secret[protocol]["public_key"] = pub
             if protocol == "ECC":
                 secret[protocol]["public_key"] = {"x":pub.x, "y":pub.y}
+            if protocol == "ElGamal":
+                secret[protocol]["public_key"] = pub
+                secret[protocol]["private_key"] = {"q":priv[0], "h":priv[1], "g":priv[2]}
             with open("./server_utils/server_secret.json", "w") as file:
                 file.write(json.dumps(secret))
             return priv
