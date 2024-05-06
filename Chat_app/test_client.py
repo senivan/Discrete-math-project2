@@ -114,8 +114,6 @@ async def connect_to_server():
         response = await websocket.recv()
         response = EncDecWrapper.decrypt(response, private_key=private_key, protocol=comm_protocol, public_key=server_public_key)
         print(f"Response: {response}")
-        if comm_protocol == "ECC":
-            response = response.decode('utf-8').strip('\x00')
         if response == "Success":
             print("Login successful")
             send_task = asyncio.create_task(send_message(websocket))
