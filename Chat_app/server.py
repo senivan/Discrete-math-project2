@@ -10,9 +10,9 @@ import websockets
 import hashlib
 import json
 from Encryption_algos import ECC, RSA, ElGamal
-from server_utils import database
+from server_utils import database, logger
 
-
+_logger = logger.Logger("./server_utils/server.log")
 class EncDecWrapper:
     @staticmethod
     def encrypt(message, protocol, **kwargs):
@@ -38,25 +38,23 @@ class EncDecWrapper:
     
     @staticmethod
     async def handshake(protocol, websocket, **kwargs):
-        print("Connected to client")
+        _logger.log(f"Handshake started for {protocol}", 1)
         await websocket.recv()
         msg = json.dumps(protocol)
-        print(f"Sending: {msg}")
+        _logger.log(f"Sending: {msg}", 1)
         await websocket.send(msg)
         if protocol == "RSA":
             client_key = await websocket.recv()
             client_key = json.loads(client_key)
-            print(f"Client key: {client_key}")
+            _logger.log(f"Client key: {client_key}", 1)
             await websocket.send(json.dumps(kwargs["public_key"]))
             return client_key
         if protocol == "ECC":
             client_key = await websocket.recv()
             client_key = json.loads(client_key)
             client_key = ECC.Point(client_key["x"], client_key["y"])
-            print(f"Client key: {client_key}")
+            _logger.log(f"Client key: {client_key}", 1)
             await websocket.send(json.dumps(kwargs["public_key"]))
-            print(f"Server private key: {kwargs['private_key']}")
-
             shared_secret = ECC.ECC.derive_key_function(kwargs["private_key"], client_key)
             return shared_secret
         if protocol == "ElGamal":
@@ -128,9 +126,15 @@ class Server:
         self.db = database.Database(self.config.db_path)
         self.users = {}
         self.keys = (Keys.get_public_key(self.config.encrypt), Keys.get_private_key(self.config.encrypt))
-        print(self.keys[0], self.keys[1])
+        _logger.log(f"Encryption protocol: {self.config.encrypt}", 0)
+        _logger.log(f"Database path: {self.config.db_path}", 0)
+        _logger.log(f"Host: {self.config.host}", 0)
+        _logger.log(f"Port: {self.config.port}", 0)
+        _logger.log(f"Keys: {self.keys}", 1)
+
 
     def run(self):
+        _logger.log("Server started", 0)
         start_server = websockets.serve(self.connect, self.config.host, self.config.port, ping_interval=30, ping_timeout=120)
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
@@ -146,16 +150,16 @@ class Server:
                 message = await websocket.recv()
                 message = EncDecWrapper.decrypt(message, self.config.encrypt, private_key=self.keys[1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None)
                 message = json.loads(message)
-                print(message)
+                _logger.log(f"Received: {message['data']}", 1)
                 if hashlib.sha256(message['data'].encode('utf-8')).hexdigest() != message['hash']:
-                    print("Message has been tampered with")
+                    _logger.log(f"Message hash mismatch: {message['data']}", 3)
                     continue
                 # msg = EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash']
                 self.db.create_message(EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash'])
-                print(f"Received: {message['data']}")
+                _logger.log(f"Message saved to database: {message}", 0)
                 await self.send_message(message)
             except websockets.exceptions.ConnectionClosedError:
-                print("Client disconnected")
+                _logger.log(f"User {self.users[websocket][0]} disconnected", 1)
                 break
 
     async def connect(self, websocket):
@@ -163,12 +167,14 @@ class Server:
         shared_secret = None
         if self.config.encrypt == "RSA":
             client_key = await EncDecWrapper.handshake("RSA", websocket, public_key=self.keys[0])
+            _logger.log(f"Client key: {client_key}", 1)
         if self.config.encrypt == "ECC":
             shared_secret = await EncDecWrapper.handshake("ECC", websocket, public_key=self.keys[0], private_key=self.keys[1])
             shared_secret = shared_secret[:16]
-            print(len(shared_secret))
+            _logger.log(f"Shared secret: {shared_secret}", 1)
         if self.config.encrypt == "ElGamal":
             client_key = await EncDecWrapper.handshake("ElGamal", websocket, public_key=self.keys[0])
+            _logger.log(f"Client key: {client_key}", 1)
         login_info = await websocket.recv()
         if self.config.encrypt == "RSA":
             login_info = EncDecWrapper.decrypt(login_info, "RSA", private_key=self.keys[1])
@@ -188,11 +194,11 @@ class Server:
                 self.users[websocket] = (login_info['username'], shared_secret)
             if self.config.encrypt == "ElGamal":
                 self.users[websocket] = (login_info['username'], client_key)
-            print(f"User {login_info['username']} connected")
+            _logger.log(f"User {login_info['username']} connected", 0)
             await self.handle_client(websocket)
         else:
             await websocket.send(EncDecWrapper.encrypt("Fail", self.config.encrypt, public_key=client_key, shared_key=shared_secret))
-            print("User failed to connect")
+            _logger.log(f"User {login_info['username']} failed to connect", 2)
             await websocket.close()
 
 
@@ -210,6 +216,7 @@ if __name__ == "__main__":
     with open("server_config.json", "r", encoding='utf-8') as fil:
         data = fil.read()
         config = Config(json.loads(data))
+    _logger.log(f"Config: {config.__dict__}", 0)
     server = Server(config)
     # server.db.add_user("test1", hashlib.sha256("test1".encode('utf-8')).hexdigest())
     server.run()

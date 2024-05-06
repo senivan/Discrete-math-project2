@@ -3,10 +3,10 @@ import os
 
 class LogMessage:
     level_map = {
-        0: "INFO",
-        1: "WARNING",
-        2: "ERROR",
-        3: "CRITICAL"
+        "INFO":0,
+        "WARNING":2,
+        "ERROR":3,
+        "CRITICAL":4
     }
 
     def __init__(self, message:str, level:int, time:datetime.datetime = datetime.datetime.now()):
