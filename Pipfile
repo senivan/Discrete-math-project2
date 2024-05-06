@@ -7,6 +7,9 @@ name = "pypi"
 pyqt6 = "*"
 pyqt-tools = "*"
 websockets = "*"
+blurwindow = "*"
+qtacrylic = "*"
+
 [dev-packages]
 
 [requires]

@@ -163,3 +163,4 @@ cython_debug/
 *.pbm
 *.pem
 server_secret.json
+client_secret.json
