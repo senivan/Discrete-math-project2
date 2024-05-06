@@ -12,7 +12,7 @@ import json
 from Encryption_algos import ECC, RSA, ElGamal
 from server_utils import database, logger
 
-_logger = logger.Logger("./server_utils/server.log")
+_logger = logger.Logger("./server_utils/server.log", 0, True)
 class EncDecWrapper:
     @staticmethod
     def encrypt(message, protocol, **kwargs):

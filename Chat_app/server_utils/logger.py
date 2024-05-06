@@ -4,9 +4,9 @@ import os
 class LogMessage:
     level_map = {
         "INFO":0,
-        "WARNING":2,
-        "ERROR":3,
-        "CRITICAL":4
+        "WARNING":1,
+        "ERROR":2,
+        "CRITICAL":3
     }
 
     def __init__(self, message:str, level:int, time:datetime.datetime = datetime.datetime.now()):
