@@ -12,7 +12,7 @@ import json
 from Encryption_algos import ECC, RSA, ElGamal
 from server_utils import database, logger
 
-_logger = logger.Logger("./server_utils/server.log", 0, True)
+
 class EncDecWrapper:
     @staticmethod
     def encrypt(message, protocol, **kwargs):
@@ -119,6 +119,7 @@ class Config:
         self.db_path = conf["db_path"]
         self.host = conf["host"]
         self.port = conf["port"]
+        self.log_level = conf["debug_level"]
 
 class Server:
     def __init__(self, config:'Config'):
@@ -180,7 +181,6 @@ class Server:
             login_info = EncDecWrapper.decrypt(login_info, "RSA", private_key=self.keys[1])
         if self.config.encrypt == "ECC":
             login_info = EncDecWrapper.decrypt(login_info, "ECC", shared_key=shared_secret)
-            login_info = login_info.decode('utf-8').strip('\x00')
         if self.config.encrypt == "ElGamal":
             login_info = EncDecWrapper.decrypt(login_info, "ElGamal", private_key=self.keys[1])
         login_info = json.loads(login_info)
@@ -216,6 +216,8 @@ if __name__ == "__main__":
     with open("server_config.json", "r", encoding='utf-8') as fil:
         data = fil.read()
         config = Config(json.loads(data))
+    global _logger
+    _logger = logger.Logger("./server_utils/server.log", config.log_level, True)
     _logger.log(f"Config: {config.__dict__}", 0)
     server = Server(config)
     # server.db.add_user("test1", hashlib.sha256("test1".encode('utf-8')).hexdigest())
