@@ -176,22 +176,22 @@ class MainWindow(QWidget):
         grid.addWidget(self.label, 0, 0)
 
         self.chats = QLabel(self)
-        self.chats.setStyleSheet("background-color: white; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 450px;")
+        self.chats.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 450px; margin-top: 10px;")
         grid.addWidget(self.chats, 1, 0, 2, 0)
 
         self.message_box = QLabel(self)
-        self.message_box.setStyleSheet("background-color: white; color: black; font-size: 20px; margin-right: 50px; padding: 10px; border-radius: 10px;")
+        self.message_box.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px;margin-left: 10 px; margin-right: 4px; padding: 10px; border-radius: 10px;")
         grid.addWidget(self.message_box, 0, 1, 2, 2)
 
         self.message = QLineEdit(self)
         self.message.setPlaceholderText("Message")
-        self.message.setStyleSheet("background-color: white; color: black; font-size: 20px; margin-left: 10px; margin-right: 10px; padding: 10px; border-radius: 10px;")
+        self.message.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; margin-right: 10px; padding: 10px; border-radius: 10px;")
         grid.addWidget(self.message, 2, 1)
 
         self.send_button = QPushButton("Send", self)
-        self.send_button.setStyleSheet("background-color: #4CAF50; color: white; font-size: 20px; margin-left: 50px; margin-right: 50px; padding: 10px; border-radius: 10px;")
+        self.send_button.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; margin-right: 10px; padding: 10px; border-radius: 10px; min-width: 100px;")
         grid.addWidget(self.send_button, 2, 2)
-        
+
         self.setLayout(grid)
         self.user_creds = self.load_creds()
         
