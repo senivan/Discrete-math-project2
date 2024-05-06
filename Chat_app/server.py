@@ -9,9 +9,9 @@ import asyncio
 import websockets
 import hashlib
 import json
-import os
 from Encryption_algos import ECC, RSA, ElGamal
 from server_utils import database
+
 
 class EncDecWrapper:
     @staticmethod
