@@ -32,7 +32,7 @@ In the `server_config.json` file, you can change the following parameters:
 - 'port': The port to run the server on. Default is 8000
 - 'host': The host to run the server on. Default is 'localhost'
 - 'db': The database file to use. Default is 'db.sqlite3'
-- 'debug_level': The debug level to use. Default is 'INFO'
+- 'debug_level': The log level to use. Default is 'INFO' - which displays all logs.
 
 
 ## Encryption algorithms used
