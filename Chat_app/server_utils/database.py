@@ -41,6 +41,7 @@ class Database:
             VALUES (?, ?)
             ''', (username, password))
         self.db.commit()
+        return True
     def add_user_obj(self, user:'User'):
         self.cursor.execute('''
             INSERT INTO Users (username, password)

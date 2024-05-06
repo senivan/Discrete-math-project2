@@ -184,22 +184,39 @@ class Server:
         if self.config.encrypt == "ElGamal":
             login_info = EncDecWrapper.decrypt(login_info, "ElGamal", private_key=self.keys[1])
         login_info = json.loads(login_info)
-
-        if self.db.check_user(login_info['username'], login_info['password']):
-            msg = EncDecWrapper.encrypt("Success", self.config.encrypt, public_key=client_key, shared_key=shared_secret)
-            await websocket.send(msg)
-            if self.config.encrypt == "RSA":
-                self.users[websocket] = (login_info['username'], client_key)
-            if self.config.encrypt == "ECC":
-                self.users[websocket] = (login_info['username'], shared_secret)
-            if self.config.encrypt == "ElGamal":
-                self.users[websocket] = (login_info['username'], client_key)
-            _logger.log(f"User {login_info['username']} connected", 0)
-            await self.handle_client(websocket)
+        print(login_info)
+        if login_info['register'] == True:
+            if self.db.add_user(login_info['username'], login_info['password']):
+                msg = EncDecWrapper.encrypt("Success", self.config.encrypt, public_key=client_key, shared_key=shared_secret)
+                await websocket.send(msg)
+                if self.config.encrypt == "RSA":
+                    self.users[websocket] = (login_info['username'], client_key)
+                if self.config.encrypt == "ECC":
+                    self.users[websocket] = (login_info['username'], shared_secret)
+                if self.config.encrypt == "ElGamal":
+                    self.users[websocket] = (login_info['username'], client_key)
+                _logger.log(f"User {login_info['username']} connected", 0)
+                await self.handle_client(websocket)
+            else:
+                await websocket.send(EncDecWrapper.encrypt("Fail", self.config.encrypt, public_key=client_key, shared_key=shared_secret))
+                _logger.log(f"User {login_info['username']} failed to connect", 2)
+                await websocket.close()
         else:
-            await websocket.send(EncDecWrapper.encrypt("Fail", self.config.encrypt, public_key=client_key, shared_key=shared_secret))
-            _logger.log(f"User {login_info['username']} failed to connect", 2)
-            await websocket.close()
+            if self.db.check_user(login_info['username'], login_info['password']):
+                msg = EncDecWrapper.encrypt("Success", self.config.encrypt, public_key=client_key, shared_key=shared_secret)
+                await websocket.send(msg)
+                if self.config.encrypt == "RSA":
+                    self.users[websocket] = (login_info['username'], client_key)
+                if self.config.encrypt == "ECC":
+                    self.users[websocket] = (login_info['username'], shared_secret)
+                if self.config.encrypt == "ElGamal":
+                    self.users[websocket] = (login_info['username'], client_key)
+                _logger.log(f"User {login_info['username']} connected", 0)
+                await self.handle_client(websocket)
+            else:
+                await websocket.send(EncDecWrapper.encrypt("Fail", self.config.encrypt, public_key=client_key, shared_key=shared_secret))
+                _logger.log(f"User {login_info['username']} failed to connect", 2)
+                await websocket.close()
 
 
 
