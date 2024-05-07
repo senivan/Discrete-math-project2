@@ -9,6 +9,7 @@ pyqt-tools = "*"
 websockets = "*"
 blurwindow = "*"
 wxpython = "*"
+websocket-client = "*"
 
 [dev-packages]
 
