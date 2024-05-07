@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QV
 import PyQt5.QtCore as QtCore
 from PyQt5.QtGui import QPixmap
 # import tkinter as tk
+import wx
 import websockets
 import asyncio
 import json
@@ -155,9 +156,11 @@ class RegiWinndow(QWidget):
 
 class MainWindow(QWidget):
     def __init__(self) -> None:
-        super().__init__() 
+        super().__init__()
         self.setWindowTitle("Chat")
-        self.setFixedSize(1920, 1080)
+        outp= wx.App(False)
+        width, height= wx.GetDisplaySize()
+        self.setFixedSize(width, height-150)
         self.shadow = QGraphicsDropShadowEffect()
         self.shadow.setBlurRadius(20)
         self.shadow.setXOffset(0)

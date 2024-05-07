@@ -8,7 +8,7 @@ pyqt6 = "*"
 pyqt-tools = "*"
 websockets = "*"
 blurwindow = "*"
-qtacrylic = "*"
+wxpython = "*"
 
 [dev-packages]
 
