@@ -160,7 +160,7 @@ class MainWindow(QWidget):
         self.setWindowTitle("Chat")
         outp= wx.App(False)
         width, height= wx.GetDisplaySize()
-        self.setFixedSize(width, height-150)
+        self.setFixedSize(width-150, height-150)
         self.shadow = QGraphicsDropShadowEffect()
         self.shadow.setBlurRadius(20)
         self.shadow.setXOffset(0)
