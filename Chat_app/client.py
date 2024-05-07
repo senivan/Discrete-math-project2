@@ -11,6 +11,7 @@ import json
 import os
 import hashlib
 import sys
+from datetime import datetime
 from Encryption_algos import RSA, ECC, ElGamal
 from server_utils import logger
 
@@ -195,10 +196,23 @@ class ConnectionHandler:
             _logger.log(f"Received: {response}", 0)
             if response == "Success":
                 _logger.log("Login successful", 0)
-                # while True:
-                #     await asyncio.sleep(0.1)
+                await self.on_message()
             else:
                 pass
+    
+    async def on_message(self):
+        
+        async def on_msg(self):
+            await self.websocket.recv()
+            _logger.log(f"Received: {msg}", 0)
+            return msg
+        while True:
+            msg = await on_msg(self)
+            
+    
+    async def send_message(self, message):
+        await self.websocket.send(EncDecWrapper.encrypt(message, self.comm_protocol, public_key=self.server_public_key))
+        _logger.log(f"Sent: {message}", 0)
 
 class MainWindow(QWidget):
     def __init__(self) -> None:
@@ -338,8 +352,11 @@ class MainWindow(QWidget):
         return dct['username'], dct['password']
     
     def send_message(self):
-        pass
-    
+        message = self.input_message.text()
+        self.input_message.setText("")
+        self.create_bubble(message, datetime.strftime(datetime.now(), "%H:%M"), self.user_creds[0])
+        self.connection.loop.run_until_complete(self.connection.send_message(message))
+
     # async def connect_to_server(self, username, password, register=False):
     #     async with websockets.connect("ws://localhost:8000") as websocket:
     #         await websocket.send("Initiate handshake")

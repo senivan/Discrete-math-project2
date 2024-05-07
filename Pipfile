@@ -10,6 +10,7 @@ websockets = "*"
 blurwindow = "*"
 wxpython = "*"
 websocket-client = "*"
+rel = "*"
 
 [dev-packages]
 
