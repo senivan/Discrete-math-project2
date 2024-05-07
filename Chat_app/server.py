@@ -38,6 +38,7 @@ class EncDecWrapper:
     
     @staticmethod
     async def handshake(protocol, websocket, **kwargs):
+        _logger.log(f"type: {type(websocket)}", 1)
         _logger.log(f"Handshake started for {protocol}", 1)
         await websocket.recv()
         msg = json.dumps(protocol)

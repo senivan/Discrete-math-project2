@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QV
 # from PyQt5.QtWidgets import QDesktopWidget
 import PyQt5.QtCore as QtCore
 from PyQt5.QtGui import QPixmap
-import websocket
+import websockets
 # import tkinter as tk
 import wx
 # import websockets
@@ -69,7 +69,7 @@ class EncDecWrapper:
         if protocol == "ElGamal":
             msg = json.dumps(kwargs["public_key"])
             await websocket.send(msg)
-            server_ = await websocket.recv()
+            server_ =await websocket.recv()
             server_ = json.loads(server_)
             return server_
 class RegiWinndow(QWidget):
@@ -158,40 +158,47 @@ outp= wx.App(False)
 width, height= wx.GetDisplaySize()
 
 class ConnectionHandler:
-    def __init__(self):
-        self.keys = None
-        self.protocol = None
+    def __init__(self, username, password, register=False):
+        self.loop = asyncio.get_event_loop()
+        self.connection = None
+        _logger.log(f"User credentiols {username} {password}", 0)
+        self.username = username
+        self.password = password
+        self.register = register
         self.server_public_key = None
-        self.WS = websocket.WebSocketApp("ws://localhost:8000", on_message=self.on_message, on_error=self.on_error, on_close=self.on_close, on_open=self.connect_to_server)
-    async def run(self, username, password, register=False):
-        # async with websockets.connect("ws://localhost:8000") as websocket:
-        #     await websocket.send("Initiate handshake")
-        #     global public_key, private_key, comm_protocol
-        #     comm_protocol = await websocket.recv()
-        #     comm_protocol = json.loads(comm_protocol)
-        #     _logger.log(f"Communication protocol: {comm_protocol}", 0)
-        #     private_key, public_key = EncDecWrapper.generate_keys(comm_protocol)
-        #     global server_public_key
-        #     server_public_key = await EncDecWrapper.handshake(comm_protocol, websocket, public_key=public_key, private_key=private_key)
-        #     _logger.log(f"Server public key: {server_public_key}", 0)
-        #     _logger.log(f"Client public key: {public_key}", 0)
-        #     _logger.log("Connected to server", 0)
-        #     msg = json.dumps({"username":username, "password":password, "register":not register})
-        #     _logger.log(f"Sending: {msg}", 0)
-        #     await websocket.send(EncDecWrapper.encrypt(msg, comm_protocol, public_key=server_public_key))
-        #     response = await websocket.recv()
-        #     response = EncDecWrapper.decrypt(response, comm_protocol, private_key=private_key, public_key=server_public_key)
-        #     _logger.log(f"Received: {response}", 0)
-        #     if response == "Success":
-        #         _logger.log("Login successful", 0)
-        #         # while True:
-        #         #     await asyncio.sleep(0.1)
-        #     else:
-        #         pass
-        
-        
-
-        self.WS.run_forever()
+        self.comm_protocol = None
+        self.public_key = None
+        self.private_key = None
+        self.connected = False
+        self.websocket = None
+        self.server = "ws://localhost:8000"
+        _logger.log(f"User credentiols {self.username} {self.password}", 0)
+        self.loop.run_until_complete(self.connect_to_server())
+    
+    async def connect_to_server(self):
+        async with websockets.connect(self.server) as websocket:
+            await websocket.send("Initiate handshake")
+            self.comm_protocol = await websocket.recv()
+            self.comm_protocol = json.loads(self.comm_protocol)
+            self.private_key, self.public_key = EncDecWrapper.generate_keys(self.comm_protocol)
+            self.server_public_key = await EncDecWrapper.handshake(self.comm_protocol, websocket, public_key=self.public_key, private_key=self.private_key)
+            self.websocket = websocket
+            self.connected = True
+            _logger.log(f"Server public key: {self.server_public_key}", 0)
+            _logger.log(f"Client public key: {self.public_key}", 0)
+            _logger.log("Connected to server", 0)
+            msg = json.dumps({"username":self.username, "password":self.password, "register":not self.register})
+            _logger.log(f"Sending: {msg}", 0)
+            await websocket.send(EncDecWrapper.encrypt(msg, self.comm_protocol, public_key=self.server_public_key))
+            response = await websocket.recv()
+            response = EncDecWrapper.decrypt(response, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
+            _logger.log(f"Received: {response}", 0)
+            if response == "Success":
+                _logger.log("Login successful", 0)
+                # while True:
+                #     await asyncio.sleep(0.1)
+            else:
+                pass
 
 class MainWindow(QWidget):
     def __init__(self) -> None:
@@ -260,7 +267,7 @@ class MainWindow(QWidget):
         scroll = QScrollArea()
         scroll.setWidget(self.wrapper)
         scroll.setWidgetResizable(True)
-        grid.addWidget(scroll, 0, 1, 2, 2)
+        grid.addWidget(scroll, 0, 1, 2, 3)
         
 
         self.input_message = QLineEdit(self)
@@ -268,14 +275,21 @@ class MainWindow(QWidget):
         self.input_message.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; margin-right: 10px; padding: 10px; border-radius: 10px;")
         grid.addWidget(self.input_message, 2, 1)
 
+        self.media_button = QPushButton("Media", self)
+        self.media_button.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; margin-right: 10px; padding: 10px; border-radius: 10px;")
+        grid.addWidget(self.media_button, 2, 2)
+
+
         self.send_button = QPushButton("Send", self)
         self.send_button.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; margin-right: 10px; padding: 10px; border-radius: 10px; min-width: 100px;")
-        grid.addWidget(self.send_button, 2, 2)
+        grid.addWidget(self.send_button, 2, 3)
         self.send_button.clicked.connect(self.send_message)
 
         self.setLayout(grid)
         self.user_creds = self.load_creds()
-        
+        _logger.log(f"User credentials: {self.user_creds}", 0)
+        self.connection = ConnectionHandler(self.user_creds[0], self.user_creds[1], self.cred_flag)
+
         self.show()
         # asyncio.run(self.connect_to_server(self.user_creds[0], self.user_creds[1], self.cred_flag))
 
@@ -290,12 +304,13 @@ class MainWindow(QWidget):
         self.username.setStyleSheet("color: #4CAF50; font-size: 18px; font-weight: bold;")
         # self.username.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px;")
         self.bubble = QWidget()
-        self.bubble.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 700%;")
+        self.bubble.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px;")
+        
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setSpacing(0)
         self.message = QLabel(message, self.bubble)
-        # self.message.setWordWrap(True)
+        self.message.setWordWrap(True)
         # self.message.setReadOnly(True)
         self.message.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px;")
         self.time = QLabel(time, self.bubble)
