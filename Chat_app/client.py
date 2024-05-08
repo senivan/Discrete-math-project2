@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGridLayout, QScrollArea, QPlainTextEdit, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGridLayout, QScrollArea, QPlainTextEdit, QHBoxLayout, QDialog
 # from PyQt5.QtWidgets import QDesktopWidget
 import PyQt5.QtCore as QtCore
 from PyQt5.QtGui import QPixmap
@@ -196,7 +196,7 @@ class ConnectionHandler:
             _logger.log(f"Received: {response}", 0)
             if response == "Success":
                 _logger.log("Login successful", 0)
-                await self.on_message()
+                # await self.on_message()
             else:
                 pass
     
@@ -225,7 +225,7 @@ class MainWindow(QWidget):
         self.shadow.setYOffset(0)
         self.shadow.setColor(QtCore.Qt.GlobalColor.black)
         self.setGraphicsEffect(self.shadow)
-        self.setWindowOpacity(0.9)
+        self.setWindowOpacity(0.93)
         self.setStyleSheet("background-color: rgba(0, 0, 0, 0.9);")
         grid = QGridLayout()
         self.label = QLabel("Chat", self)
@@ -235,9 +235,19 @@ class MainWindow(QWidget):
         self.label.setPixmap(pixmap)
         grid.addWidget(self.label, 0, 0)
 
-        self.chats = QLabel(self)
-        self.chats.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 450px; margin-top: 10px;")
-        grid.addWidget(self.chats, 1, 0, 2, 0)
+        self.chats_wrapper = QWidget()
+        self.chats = QVBoxLayout()
+        self.chats.setAlignment(QtCore.Qt.AlignTop)
+        self.generate_chat("Chat1")
+        self.chats_wrapper.setLayout(self.chats)
+        self.chats_wrapper.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 450px; margin-top: 10px;")
+        grid.addWidget(self.chats_wrapper, 1, 0)
+
+        self.all_chats_data = {}
+        self.add_chat = QPushButton("Add Chat", self)
+        self.add_chat.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 15px; padding: 10px; border-radius: 10px; max-width: 450px;")
+        self.add_chat.clicked.connect(self.new_chat)
+        grid.addWidget(self.add_chat, 2, 0)
 
         # self.message_box = QGridLayout()
         # self.message_box.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px;margin-left: 10 px; margin-right: 4px; padding: 10px; border-radius: 10px;")
@@ -307,6 +317,54 @@ class MainWindow(QWidget):
         self.show()
         # asyncio.run(self.connect_to_server(self.user_creds[0], self.user_creds[1], self.cred_flag))
 
+    def new_chat(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("New Chat")
+        layout = QVBoxLayout(dialog)
+        label = QLabel("Enter chat name:", dialog)
+        layout.addWidget(label)
+        chat_name_input = QLineEdit(dialog)
+        layout.addWidget(chat_name_input)
+        usernames = QLabel("Enter usernames separated by ';' symbols:", dialog)
+        layout.addWidget(usernames)
+        usernames_input = QLineEdit(dialog)
+        layout.addWidget(usernames_input)
+        create_button = QPushButton("Create", dialog)
+        layout.addWidget(create_button)
+        label.setStyleSheet("color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px;")
+        chat_name_input.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px;")
+        usernames.setStyleSheet("color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px;")
+        usernames_input.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px;")
+        create_button.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; margin-top: 10px;")
+        create_button.setEnabled(False)
+        usernames_input.textChanged.connect(lambda: create_button.setEnabled(True) if chat_name_input.text() and usernames_input.text() and (str(chat_name_input.text()) not in self.all_chats_data) else create_button.setEnabled(False))
+        chat_name_input.textChanged.connect(lambda: create_button.setEnabled(True) if chat_name_input.text() and usernames_input.text() and (str(chat_name_input.text()) not in self.all_chats_data) else create_button.setEnabled(False))
+        create_button.clicked.connect(lambda: self.generate_chat(chat_name_input.text()))
+        create_button.clicked.connect(lambda: self.all_chats_data.update({chat_name_input.text():usernames_input.text().split(";")}))
+        create_button.clicked.connect(dialog.close)
+        dialog.exec_()
+        print(chat_name_input.text(), self.all_chats_data)
+        # chat_name = chat_name_input.text()
+        # usernames_res = usernames_input.text().split(";")
+        # self.all_chats_data[chat_name] = usernames_res
+
+    def generate_chat(self, chat_name):
+        chat = QPushButton(chat_name, self.chats_wrapper)
+        chat.setCheckable(True)
+        chat.clicked.connect(self.chat_clicked)
+        chat.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
+        self.chats.addWidget(chat)
+
+    def chat_clicked(self):
+        for button in self.chats_wrapper.findChildren(QPushButton):
+            if button != self.sender():
+                button.setChecked(False)
+                button.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
+        if self.sender().isChecked():
+            self.sender().setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
+        else:
+            self.sender().setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
+
     def create_bubble(self, message, time, user):
         self.wrapper1 = QWidget()
         self.message_box1 = QHBoxLayout()
@@ -355,7 +413,7 @@ class MainWindow(QWidget):
         message = self.input_message.text()
         self.input_message.setText("")
         self.create_bubble(message, datetime.strftime(datetime.now(), "%H:%M"), self.user_creds[0])
-        self.connection.loop.run_until_complete(self.connection.send_message(message))
+        # self.connection.loop.run_until_complete(self.connection.send_message(message))
 
     # async def connect_to_server(self, username, password, register=False):
     #     async with websockets.connect("ws://localhost:8000") as websocket:
