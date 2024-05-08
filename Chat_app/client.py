@@ -159,13 +159,15 @@ width, height= wx.GetDisplaySize()
 class ConnectionHandler(QThread):
     message = pyqtSignal(dict)
     all_chats = pyqtSignal(list)
+    all_messages = pyqtSignal(list)
     class Message:
-        def __init__(self, data, time_sent, sender_username, type, hash):
+        def __init__(self, data, time_sent, sender_username, type, hash, chat_id=None):
             self.data = data
             self.time_sent = time_sent
             self.sender_username = sender_username
             self.type = type
             self.hash = hash
+            self.chat_id = chat_id
 
     def __init__(self, username, password, register=False):
         super().__init__()
@@ -184,6 +186,7 @@ class ConnectionHandler(QThread):
         self.server = "ws://localhost:8000"
         self._all_chats = None
         self.listener = None
+        self._all_messages = None
     async def connect_to_server(self):
         self.websocket = await websockets.connect(self.server)
         await self.websocket.send("Initiate handshake")
@@ -229,6 +232,10 @@ class ConnectionHandler(QThread):
             message = await self.websocket.recv()
             message = EncDecWrapper.decrypt(message, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
             message = json.loads(message)
+            if 'chat_history' in message:
+                _logger.log(f"Received chat history: {message['chat_history']}", 0)
+                self._all_messages = message['chat_history']
+                self.all_messages.emit(message['chat_history'])
             _logger.log(f"Received: {message['data']} from {message['sender_username']} at {message['time_sent']}", 0)
             self.message.emit(message)
             _logger.log("Emitted message", 0)
@@ -240,18 +247,25 @@ class ConnectionHandler(QThread):
         response = EncDecWrapper.decrypt(response, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
         response = json.loads(response)
         return response
-    
+
+    def _get_chat_history(self, chat_id):
+        data = {"get_chat_history":chat_id}
+        data = json.dumps(data)
+        msg = ConnectionHandler.Message(data, datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", hashlib.sha256(data.encode('utf-8')).hexdigest())
+        asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(msg.__dict__), self.comm_protocol, public_key=self.server_public_key)))
+
     def get_all_chats(self):
         return self.all_chats
 
-    def send_message(self, message, type="txt"):
-        to_send = self.Message(message, datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, type, hashlib.sha256(message.encode('utf-8')).hexdigest())
-        _logger.log(f"Sent: {message}", 0)
+    def send_message(self, message):
+        to_send = self.Message(message["data"], message["time_sent"], message["sender_username"], message["type"], message["hash"], message["chat_id"])
+        _logger.log(f"Sent: {to_send}", 0)
         asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(to_send.__dict__), self.comm_protocol, public_key=self.server_public_key)))
         
 class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
+        self.selected_chat = None
         self.setWindowTitle("Chat")
         self.setGeometry(100, 100, width, height)
         self.shadow = QGraphicsDropShadowEffect()
@@ -319,6 +333,7 @@ class MainWindow(QWidget):
 
         self.connection.message.connect(self.create_bubble)
         self.connection.all_chats.connect(self.generate_chats)
+        self.connection.all_messages.connect(self.generate_bubbles)
         self.connection.start()
         
         # self.all_chats_data = self.connection.get_all_chats()
@@ -326,8 +341,9 @@ class MainWindow(QWidget):
         self.show()
     
     def generate_chats(self, chats):
+        _logger.log(f"Chats: {chats}", 0)
         for chat in chats:
-            self.all_chats_data.update({chat['name']:chat['participants']})
+            self.all_chats_data.update({chat['id']:chat['name']})
             self.generate_chat(chat['name'])
 
     def new_chat(self):
@@ -363,9 +379,21 @@ class MainWindow(QWidget):
         chat.clicked.connect(self.chat_clicked)
         chat.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
         self.chats.addWidget(chat)
-
+    
+    def generate_bubbles(self, messages):
+        _logger.log(f"Messages: {messages}", 0)
+        for message in messages:
+            self.create_bubble(message)
     def chat_clicked(self):
+        self.clear_message_box()
+
         for button in self.chats_wrapper.findChildren(QPushButton):
+            if button == self.sender():
+                self.selected_chat = button.text()
+                _logger.log(f"Selected chat: {self.selected_chat}", 0)
+                chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
+                self.connection._get_chat_history(chat_id)
+                _logger.log(f"Chat id: {chat_id}", 0)
             if button != self.sender():
                 button.setChecked(False)
                 button.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
@@ -378,6 +406,10 @@ class MainWindow(QWidget):
             self.input_message.setEnabled(False)
             self.media_button.setEnabled(False)
             self.clear_message_box()
+        
+        chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
+        # for message in self.connection.get_chat_history(chat_id):
+        #     self.create_bubble(message)
 
     def generate_chat_mesasages(self):
         for button in self.chats_wrapper.findChildren(QPushButton):
@@ -450,11 +482,13 @@ class MainWindow(QWidget):
     
     def send_message(self):
         message = self.input_message.text()
+        chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
         self.input_message.setText("")
+        msg = {"data":message, "time_sent":datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M"), "sender_username":self.user_creds[0], "chat_id":chat_id, "type":"txt", "hash":hashlib.sha256(message.encode('utf-8')).hexdigest()}
+        _logger.log(f"Sending: {msg} to {chat_id}", 0)
         if message != "":
-            msg = {"data":message, "time_sent":datetime.strftime(datetime.now(), "%H:%M"), "sender_username":self.user_creds[0]}
             self.create_bubble(msg)
-        self.connection.send_message(message)
+            self.connection.send_message(msg)
     def send_media_message(self):
         file_dialog = QFileDialog()
         file_dialog.setFileMode(QFileDialog.ExistingFile)
