@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGridLayout, QScrollArea, QPlainTextEdit, QHBoxLayout, QDialog
+from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGridLayout, QScrollArea, QPlainTextEdit, QHBoxLayout, QDialog, QFileDialog
 # from PyQt5.QtWidgets import QDesktopWidget
 import PyQt5.QtCore as QtCore
 from PyQt5.QtGui import QPixmap
@@ -301,6 +301,8 @@ class MainWindow(QWidget):
 
         self.media_button = QPushButton("Media", self)
         self.media_button.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; margin-right: 10px; padding: 10px; border-radius: 10px;")
+        self.media_button.setEnabled(False)
+        self.media_button.clicked.connect(self.send_media_message)
         grid.addWidget(self.media_button, 2, 2)
 
 
@@ -363,10 +365,11 @@ class MainWindow(QWidget):
         if self.sender().isChecked():
             self.sender().setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
             self.input_message.setEnabled(True)
-            
+            self.media_button.setEnabled(True)
         else:
             self.sender().setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
             self.input_message.setEnabled(False)
+            self.media_button.setEnabled(False)
             self.clear_message_box()
 
     def generate_chat_mesasages(self):
@@ -400,13 +403,21 @@ class MainWindow(QWidget):
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setSpacing(0)
-        self.message = QLabel(message, self.bubble)
-        self.message.setWordWrap(True)
+        if message.endswith(".png") or message.endswith(".jpg") or message.endswith(".jpeg") or message.endswith(".gif"):
+            self.image = QLabel(self.bubble)
+            pixmap = QPixmap(message)
+            # pixmap = pixmap.scaled(200, 200)
+            pixmap = pixmap.scaledToWidth(600)
+            self.image.setPixmap(pixmap)
+            grid.addWidget(self.image, 0, 0, 0, 1)
+        else:
+            self.message = QLabel(message, self.bubble)
+            self.message.setWordWrap(True)
         # self.message.setReadOnly(True)
-        self.message.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px;")
+            self.message.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px;")
+            grid.addWidget(self.message, 0, 0, 0, 1)
         self.time = QLabel(time, self.bubble)
         self.time.setStyleSheet("background-color: #4CAF50; color: black; font-size: 14px; margin-left: 10px; padding: 10px; border-radius: 10px;")
-        grid.addWidget(self.message, 0, 0, 0, 1)
         grid.addWidget(self.time, 1, 1)
         self.bubble.setLayout(grid)
         self.message_box1.addWidget(self.username)
@@ -434,6 +445,20 @@ class MainWindow(QWidget):
         if message != "":
             self.create_bubble(message, datetime.strftime(datetime.now(), "%H:%M"), self.user_creds[0])
         # self.connection.loop.run_until_complete(self.connection.send_message(message))
+
+    def send_media_message(self):
+        file_dialog = QFileDialog()
+        file_dialog.setFileMode(QFileDialog.ExistingFile)
+        file_dialog.setNameFilter("Images (*.png *.jpg *.jpeg *.gif)")
+        if file_dialog.exec_():
+            selected_files = file_dialog.selectedFiles()
+            # Process the selected image files here
+            for file in selected_files:
+                # Send the image file to the server
+                self.send_image(file)
+    
+    def send_image(self, file):
+        self.create_bubble(file, datetime.strftime(datetime.now(), "%H:%M"), self.user_creds[0])
 
     # async def connect_to_server(self, username, password, register=False):
     #     async with websockets.connect("ws://localhost:8000") as websocket:
