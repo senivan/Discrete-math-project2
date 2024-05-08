@@ -196,7 +196,8 @@ class ConnectionHandler:
             _logger.log(f"Received: {response}", 0)
             if response == "Success":
                 _logger.log("Login successful", 0)
-                # await self.on_message()
+                
+
             else:
                 pass
     
@@ -318,7 +319,6 @@ class MainWindow(QWidget):
         self.connection = ConnectionHandler(self.user_creds[0], self.user_creds[1], self.cred_flag)
 
         self.show()
-        # asyncio.run(self.connect_to_server(self.user_creds[0], self.user_creds[1], self.cred_flag))
 
     def new_chat(self):
         dialog = QDialog(self)
@@ -444,7 +444,7 @@ class MainWindow(QWidget):
         self.input_message.setText("")
         if message != "":
             self.create_bubble(message, datetime.strftime(datetime.now(), "%H:%M"), self.user_creds[0])
-        # self.connection.loop.run_until_complete(self.connection.send_message(message))
+        self.connection.loop.run_until_complete(self.connection.send_message(message))
 
     def send_media_message(self):
         file_dialog = QFileDialog()
