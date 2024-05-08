@@ -238,7 +238,6 @@ class MainWindow(QWidget):
         self.chats_wrapper = QWidget()
         self.chats = QVBoxLayout()
         self.chats.setAlignment(QtCore.Qt.AlignTop)
-        self.generate_chat("Chat1")
         self.chats_wrapper.setLayout(self.chats)
         self.chats_wrapper.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 450px; margin-top: 10px;")
         grid.addWidget(self.chats_wrapper, 1, 0)
@@ -285,8 +284,8 @@ class MainWindow(QWidget):
         self.wrapper = QWidget()
         self.message_box = QVBoxLayout()
         self.message_box.setAlignment(QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft)
-        self.create_bubble("Hello", "12:00", "User")
-        self.create_bubble("flkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadojflkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadojflkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadojflkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadojflkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadojflkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadoj", "12:00", "User")
+        # self.create_bubble("Hello", "12:00", "User")
+        # self.create_bubble("flkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadojflkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadojflkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadojflkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadojflkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadojflkjldafjpodajfpsdajfpjdspfjpadfjpdsjfpajdjfpadoj", "12:00", "User")
         self.wrapper.setLayout(self.message_box)
         scroll = QScrollArea()
         scroll.setWidget(self.wrapper)
@@ -297,6 +296,7 @@ class MainWindow(QWidget):
         self.input_message = QLineEdit(self)
         self.input_message.setPlaceholderText("Type your message")
         self.input_message.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; margin-right: 10px; padding: 10px; border-radius: 10px;")
+        self.input_message.setEnabled(False)
         grid.addWidget(self.input_message, 2, 1)
 
         self.media_button = QPushButton("Media", self)
@@ -306,6 +306,7 @@ class MainWindow(QWidget):
 
         self.send_button = QPushButton("Send", self)
         self.send_button.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; margin-right: 10px; padding: 10px; border-radius: 10px; min-width: 100px;")
+        # self.send_button.setEnabled(False)
         grid.addWidget(self.send_button, 2, 3)
         self.send_button.clicked.connect(self.send_message)
 
@@ -343,7 +344,6 @@ class MainWindow(QWidget):
         create_button.clicked.connect(lambda: self.all_chats_data.update({chat_name_input.text():usernames_input.text().split(";")}))
         create_button.clicked.connect(dialog.close)
         dialog.exec_()
-        print(chat_name_input.text(), self.all_chats_data)
         # chat_name = chat_name_input.text()
         # usernames_res = usernames_input.text().split(";")
         # self.all_chats_data[chat_name] = usernames_res
@@ -362,8 +362,27 @@ class MainWindow(QWidget):
                 button.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
         if self.sender().isChecked():
             self.sender().setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
+            self.input_message.setEnabled(True)
+            
         else:
             self.sender().setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
+            self.input_message.setEnabled(False)
+            self.clear_message_box()
+
+    def generate_chat_mesasages(self):
+        for button in self.chats_wrapper.findChildren(QPushButton):
+            if self.sender().isChecked():
+                self.clear_message_box()
+                # Perform other actions when chat is toggle
+                pass
+            else:
+                self.clear_message_box()
+
+    def clear_message_box(self):
+        while self.message_box.count():
+            item = self.message_box.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
 
     def create_bubble(self, message, time, user):
         self.wrapper1 = QWidget()
@@ -412,7 +431,8 @@ class MainWindow(QWidget):
     def send_message(self):
         message = self.input_message.text()
         self.input_message.setText("")
-        self.create_bubble(message, datetime.strftime(datetime.now(), "%H:%M"), self.user_creds[0])
+        if message != "":
+            self.create_bubble(message, datetime.strftime(datetime.now(), "%H:%M"), self.user_creds[0])
         # self.connection.loop.run_until_complete(self.connection.send_message(message))
 
     # async def connect_to_server(self, username, password, register=False):
