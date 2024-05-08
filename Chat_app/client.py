@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGridLayout, QScrollArea, QPlainTextEdit, QHBoxLayout, QDialog, QFileDialog
 # from PyQt5.QtWidgets import QDesktopWidget
 import PyQt5.QtCore as QtCore
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QMovie
 import websockets
 # from PyQt5 import QtWebSockets
 # import tkinter as tk
@@ -429,13 +429,19 @@ class MainWindow(QWidget):
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setSpacing(0)
-        if msg.endswith(".png") or msg.endswith(".jpg") or msg.endswith(".jpeg") or msg.endswith(".gif"):
+        if msg.endswith(".png") or msg.endswith(".jpg") or msg.endswith(".jpeg"):
             self.image = QLabel(self.bubble)
             pixmap = QPixmap(msg)
             # pixmap = pixmap.scaled(200, 200)
             pixmap = pixmap.scaledToWidth(600)
             self.image.setPixmap(pixmap)
             grid.addWidget(self.image, 0, 0, 0, 1)
+        elif msg.endswith(".gif"):
+            self.gif = QMovie(msg)
+            self.gif_label = QLabel(self.bubble)
+            self.gif_label.setMovie(self.gif)
+            self.gif.start()
+            grid.addWidget(self.gif_label, 0, 0, 0, 1)
         else:
             self.message = QLabel(msg, self.bubble)
             self.message.setWordWrap(True)
