@@ -158,6 +158,7 @@ width, height= wx.GetDisplaySize()
 
 class ConnectionHandler(QThread):
     message = pyqtSignal(dict)
+    all_chats = pyqtSignal(list)
     class Message:
         def __init__(self, data, time_sent, sender_username, type, hash):
             self.data = data
@@ -181,6 +182,7 @@ class ConnectionHandler(QThread):
         self.connected = False
         self.websocket = None
         self.server = "ws://localhost:8000"
+        self._all_chats = None
         self.listener = None
     async def connect_to_server(self):
         self.websocket = await websockets.connect(self.server)
@@ -201,7 +203,10 @@ class ConnectionHandler(QThread):
         _logger.log(f"Received: {response}", 0)
         if response == "Success":
             _logger.log("Login successful", 0)
-            
+
+            self._all_chats = await self._get_all_chats()
+            print(self._all_chats)
+            self.all_chats.emit(self._all_chats)
             self.listener = asyncio.create_task(self.listen())
             done, pending = await asyncio.wait([self.listener], return_when=asyncio.FIRST_COMPLETED)
             for task in pending:
@@ -222,6 +227,17 @@ class ConnectionHandler(QThread):
             _logger.log(f"Received: {message['data']} from {message['sender_username']} at {message['time_sent']}", 0)
             self.message.emit(message)
             _logger.log("Emitted message", 0)
+    
+    async def _get_all_chats(self):
+        msg = ConnectionHandler.Message("get_chats", datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", hashlib.sha256("get_chats".encode('utf-8')).hexdigest())
+        await self.websocket.send(EncDecWrapper.encrypt(json.dumps(msg.__dict__), self.comm_protocol, public_key=self.server_public_key))
+        response = await self.websocket.recv()
+        response = EncDecWrapper.decrypt(response, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
+        response = json.loads(response)
+        return response
+    
+    def get_all_chats(self):
+        return self.all_chats
 
     def send_message(self, message, type="txt"):
         to_send = self.Message(message, datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, type, hashlib.sha256(message.encode('utf-8')).hexdigest())
@@ -297,9 +313,17 @@ class MainWindow(QWidget):
         self.connection = ConnectionHandler(self.user_creds[0], self.user_creds[1], self.cred_flag)
 
         self.connection.message.connect(self.create_bubble)
-
+        self.connection.all_chats.connect(self.generate_chats)
         self.connection.start()
+        
+        # self.all_chats_data = self.connection.get_all_chats()
+
         self.show()
+    
+    def generate_chats(self, chats):
+        for chat in chats:
+            self.all_chats_data.update({chat['name']:chat['participants']})
+            self.generate_chat(chat['name'])
 
     def new_chat(self):
         dialog = QDialog(self)

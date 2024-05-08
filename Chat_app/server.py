@@ -156,10 +156,19 @@ class Server:
                 if hashlib.sha256(message['data'].encode('utf-8')).hexdigest() != message['hash']:
                     _logger.log(f"Message hash mismatch: {message['data']}", 3)
                     continue
-                # msg = EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash']
-                self.db.create_message(EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash'])
-                _logger.log(f"Message saved to database: {message}", 0)
-                await self.send_message(message)
+
+                if message['type'] == "txt":
+                    # msg = EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash']
+                    self.db.create_message(EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash'])
+                    _logger.log(f"Message saved to database: {message}", 0)
+                    await self.send_message(message)
+                elif message['type'] == 'com':
+                    if message['data'] == "get_messages":
+                        pass
+                    elif message['data'] == "get_chats":
+                        chats = self.db.get_chats(message['sender_username'])
+                        to_send = json.dumps([chat.__dict__ for chat in chats])
+                        await websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[websocket][1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None))
             except websockets.exceptions.ConnectionClosedError:
                 _logger.log(f"User {self.users[websocket][0]} disconnected", 1)
                 del self.users[websocket]
@@ -187,7 +196,9 @@ class Server:
         if self.config.encrypt == "ElGamal":
             login_info = EncDecWrapper.decrypt(login_info, "ElGamal", private_key=self.keys[1])
         login_info = json.loads(login_info)
-        print(login_info)
+        if login_info['username'] in self.users.keys():
+            await websocket.send(EncDecWrapper.encrypt("Fail", self.config.encrypt, public_key=client_key, shared_key=shared_secret))
+            await websocket.close()
         if login_info['register'] == True:
             if self.db.add_user(login_info['username'], login_info['password']):
                 msg = EncDecWrapper.encrypt("Success", self.config.encrypt, public_key=client_key, shared_key=shared_secret)
