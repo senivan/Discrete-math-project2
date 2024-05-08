@@ -7,7 +7,7 @@ import websockets
 # import tkinter as tk
 import wx
 # import websockets
-from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QThread, pyqtSignal
 import asyncio
 import json
 import os
@@ -161,6 +161,7 @@ outp= wx.App(False)
 width, height= wx.GetDisplaySize()
 
 class ConnectionHandler(QThread):
+    message = pyqtSignal(dict)
     class Message:
         def __init__(self, data, time_sent, sender_username, type, hash):
             self.data = data
@@ -223,6 +224,8 @@ class ConnectionHandler(QThread):
             message = EncDecWrapper.decrypt(message, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
             message = json.loads(message)
             _logger.log(f"Received: {message['data']} from {message['sender_username']} at {message['time_sent']}", 0)
+            self.message.emit(message)
+            _logger.log("Emitted message", 0)
             # self.parent().create_bubble(message['data'], message['time_sent'], message['sender_username'])
             # await asyncio.sleep(0.1)
 
@@ -334,6 +337,9 @@ class MainWindow(QWidget):
         self.user_creds = self.load_creds()
         _logger.log(f"User credentials: {self.user_creds}", 0)
         self.connection = ConnectionHandler(self.user_creds[0], self.user_creds[1], self.cred_flag)
+
+        self.connection.message.connect(self.create_bubble)
+
         self.connection.start()
         self.show()
 
@@ -404,7 +410,10 @@ class MainWindow(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-    def create_bubble(self, message, time, user):
+    def create_bubble(self, message):
+        user = message['sender_username']
+        msg = message['data']
+        time = message['time_sent']
         self.wrapper1 = QWidget()
         self.message_box1 = QHBoxLayout()
         # self.message_box1.setAlignment(QtCore.Qt.AlignLeft)
@@ -420,15 +429,15 @@ class MainWindow(QWidget):
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setSpacing(0)
-        if message.endswith(".png") or message.endswith(".jpg") or message.endswith(".jpeg") or message.endswith(".gif"):
+        if msg.endswith(".png") or msg.endswith(".jpg") or msg.endswith(".jpeg") or msg.endswith(".gif"):
             self.image = QLabel(self.bubble)
-            pixmap = QPixmap(message)
+            pixmap = QPixmap(msg)
             # pixmap = pixmap.scaled(200, 200)
             pixmap = pixmap.scaledToWidth(600)
             self.image.setPixmap(pixmap)
             grid.addWidget(self.image, 0, 0, 0, 1)
         else:
-            self.message = QLabel(message, self.bubble)
+            self.message = QLabel(msg, self.bubble)
             self.message.setWordWrap(True)
         # self.message.setReadOnly(True)
             self.message.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px;")
@@ -460,7 +469,8 @@ class MainWindow(QWidget):
         message = self.input_message.text()
         self.input_message.setText("")
         if message != "":
-            self.create_bubble(message, datetime.strftime(datetime.now(), "%H:%M"), self.user_creds[0])
+            msg = {"data":message, "time_sent":datetime.strftime(datetime.now(), "%H:%M"), "sender_username":self.user_creds[0]}
+            self.create_bubble(msg)
         self.connection.send_message(message)
     def send_media_message(self):
         file_dialog = QFileDialog()
@@ -474,7 +484,8 @@ class MainWindow(QWidget):
                 self.send_image(file)
     
     def send_image(self, file):
-        self.create_bubble(file, datetime.strftime(datetime.now(), "%H:%M"), self.user_creds[0])
+        msg = {"data":file, "time_sent":datetime.strftime(datetime.now(), "%H:%M"), "sender_username":self.user_creds[0]}
+        self.create_bubble(msg)
 
     # async def connect_to_server(self, username, password, register=False):
     #     async with websockets.connect("ws://localhost:8000") as websocket:
