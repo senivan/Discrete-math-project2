@@ -108,7 +108,7 @@ async def connect_to_server():
         username = input("Enter username: ")
         password = input("Enter password: ")
         password = hashlib.sha256(password.encode('utf-8'), usedforsecurity=True).hexdigest()
-        msg = EncDecWrapper.encrypt(json.dumps({"username": username, "password": password}), public_key=server_public_key, protocol=comm_protocol)
+        msg = EncDecWrapper.encrypt(json.dumps({"username": username, "password": password, "register":False}), public_key=server_public_key, protocol=comm_protocol)
         print(f"Message: {msg}")
         await websocket.send(msg)
         response = await websocket.recv()
