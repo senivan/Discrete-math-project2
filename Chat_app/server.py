@@ -162,6 +162,7 @@ class Server:
                 await self.send_message(message)
             except websockets.exceptions.ConnectionClosedError:
                 _logger.log(f"User {self.users[websocket][0]} disconnected", 1)
+                del self.users[websocket]
                 break
 
 
@@ -219,15 +220,6 @@ class Server:
                 await websocket.send(EncDecWrapper.encrypt("Fail", self.config.encrypt, public_key=client_key, shared_key=shared_secret))
                 _logger.log(f"User {login_info['username']} failed to connect", 2)
                 await websocket.close()
-
-
-
-
-
-
-
-
-
 
 
 
