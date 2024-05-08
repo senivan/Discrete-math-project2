@@ -164,6 +164,7 @@ class Server:
                 _logger.log(f"User {self.users[websocket][0]} disconnected", 1)
                 break
 
+
     async def connect(self, websocket):
         client_key = None
         shared_secret = None
