@@ -67,6 +67,7 @@ class Database:
             INSERT INTO Chats (participants, chat_history_path, name)
             VALUES (?, ?, ?)
             ''', (participants, chat_history_path, name))
+        print(participants, chat_history_path, name)
         self.db.commit()
     
     def add_chat_obj(self, chat:'Chat'):
@@ -171,6 +172,7 @@ class Database:
         for chat in self.cursor.fetchall():
             id, participants, chat_history_path, name = chat
             res.append(Chat(id, participants, chat_history_path, name))
+            print(res[-1])
         return res
 
 class User:

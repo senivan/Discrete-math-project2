@@ -167,8 +167,15 @@ class Server:
                         pass
                     elif message['data'] == "get_chats":
                         chats = self.db.get_chats(message['sender_username'])
+                        _logger.log(f"Chats: {chats}", 0)
                         to_send = json.dumps([chat.__dict__ for chat in chats])
+                        _logger.log(f"Sending chats: {to_send}", 0)
                         await websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[websocket][1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None))
+                    elif "create_chat" in message['data']:
+                        chat_data = json.loads(message['data'])
+                        chat_data = chat_data['create_chat']
+                        _logger.log(f"Creating chat: {chat_data}", 0)
+                        self.db.add_chat(chat_data['participants'],"", chat_data['name'])
             except websockets.exceptions.ConnectionClosedError:
                 _logger.log(f"User {self.users[websocket][0]} disconnected", 1)
                 del self.users[websocket]

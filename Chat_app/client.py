@@ -205,7 +205,6 @@ class ConnectionHandler(QThread):
             _logger.log("Login successful", 0)
 
             self._all_chats = await self._get_all_chats()
-            print(self._all_chats)
             self.all_chats.emit(self._all_chats)
             self.listener = asyncio.create_task(self.listen())
             done, pending = await asyncio.wait([self.listener], return_when=asyncio.FIRST_COMPLETED)
@@ -218,6 +217,12 @@ class ConnectionHandler(QThread):
     
     def run(self):
         self.loop.run_until_complete(self.connect_to_server())
+
+    def create_chat(self, chat_name, participants):
+        data = json.dumps({"create_chat":{"name":chat_name, "participants":";".join(participants)}})
+        _logger.log(f"Sending: {data}", 0)
+        msg = self.Message(data, datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", hashlib.sha256(data.encode('utf-8')).hexdigest())
+        asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(msg.__dict__), self.comm_protocol, public_key=self.server_public_key)))
     
     async def listen(self):
         while True:
@@ -351,7 +356,7 @@ class MainWindow(QWidget):
         create_button.clicked.connect(lambda: self.all_chats_data.update({chat_name_input.text():usernames_input.text().split(";")}))
         create_button.clicked.connect(dialog.close)
         dialog.exec_()
-
+        self.connection.create_chat(chat_name_input.text(), usernames_input.text().split(";")+[self.user_creds[0]])
     def generate_chat(self, chat_name):
         chat = QPushButton(chat_name, self.chats_wrapper)
         chat.setCheckable(True)
