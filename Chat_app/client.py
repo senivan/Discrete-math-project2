@@ -3,9 +3,11 @@ from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QV
 import PyQt5.QtCore as QtCore
 from PyQt5.QtGui import QPixmap
 import websockets
+# from PyQt5 import QtWebSockets
 # import tkinter as tk
 import wx
 # import websockets
+from PyQt5.QtCore import QThread
 import asyncio
 import json
 import os
@@ -158,8 +160,37 @@ class RegiWinndow(QWidget):
 outp= wx.App(False)
 width, height= wx.GetDisplaySize()
 
-class ConnectionHandler:
+class ConnectionHandler(QThread):
+    class Message:
+        def __init__(self, data, time_sent, sender_username, type, hash):
+            self.data = data
+            self.time_sent = time_sent
+            self.sender_username = sender_username
+            self.type = type
+            self.hash = hash
+    
+    class Listener(QThread):
+        def __init__(self, ws):
+            super().__init__()
+            self.ws = ws
+            self.loop = asyncio.get_event_loop()
+        
+        def run(self):
+            self.loop.run_until_complete(self.listen())
+        
+        async def listen(self):
+            while True:
+                _logger.log("Listening", 0)
+                message = await self.ws.recv()
+                
+                message = EncDecWrapper.decrypt(message, self.parent().comm_protocol, private_key=self.parent().private_key, public_key=self.parent().server_public_key)
+                message = json.loads(message)
+                _logger.log(f"Received: {message['data']} from {message['sender_username']} at {message['time_sent']}", 0)
+                # self.parent().create_bubble(message['data'], message['time_sent'], message['sender_username'])
+                await asyncio.sleep(0.1)
+
     def __init__(self, username, password, register=False):
+        super().__init__()
         self.loop = asyncio.get_event_loop()
         self.connection = None
         _logger.log(f"User credentiols {username} {password}", 0)
@@ -173,46 +204,47 @@ class ConnectionHandler:
         self.connected = False
         self.websocket = None
         self.server = "ws://localhost:8000"
-        _logger.log(f"User credentiols {self.username} {self.password}", 0)
+        self.listener = None
+    async def connect_to_server(self):
+        self.websocket = await websockets.connect(self.server)
+        await self.websocket.send("Initiate handshake")
+        self.comm_protocol = await self.websocket.recv()
+        self.comm_protocol = json.loads(self.comm_protocol)
+        self.private_key, self.public_key = EncDecWrapper.generate_keys(self.comm_protocol)
+        self.server_public_key = await EncDecWrapper.handshake(self.comm_protocol, self.websocket, public_key=self.public_key, private_key=self.private_key)
+        self.connected = True
+        _logger.log(f"Server public key: {self.server_public_key}", 0)
+        _logger.log(f"Client public key: {self.public_key}", 0)
+        _logger.log("Connected to server", 0)
+        msg = json.dumps({"username":self.username, "password":self.password, "register":not self.register})
+        _logger.log(f"Sending: {msg}", 0)
+        await self.websocket.send(EncDecWrapper.encrypt(msg, self.comm_protocol, public_key=self.server_public_key))
+        response = await self.websocket.recv()
+        response = EncDecWrapper.decrypt(response, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
+        _logger.log(f"Received: {response}", 0)
+        if response == "Success":
+            _logger.log("Login successful", 0)
+            self.listener = self.Listener(self.websocket)
+            self.listener.start()
+            
+        else:
+            pass
+    
+    def run(self):
         self.loop.run_until_complete(self.connect_to_server())
     
-    async def connect_to_server(self):
-        async with websockets.connect(self.server) as websocket:
-            await websocket.send("Initiate handshake")
-            self.comm_protocol = await websocket.recv()
-            self.comm_protocol = json.loads(self.comm_protocol)
-            self.private_key, self.public_key = EncDecWrapper.generate_keys(self.comm_protocol)
-            self.server_public_key = await EncDecWrapper.handshake(self.comm_protocol, websocket, public_key=self.public_key, private_key=self.private_key)
-            self.websocket = websocket
-            self.connected = True
-            _logger.log(f"Server public key: {self.server_public_key}", 0)
-            _logger.log(f"Client public key: {self.public_key}", 0)
-            _logger.log("Connected to server", 0)
-            msg = json.dumps({"username":self.username, "password":self.password, "register":not self.register})
-            _logger.log(f"Sending: {msg}", 0)
-            await websocket.send(EncDecWrapper.encrypt(msg, self.comm_protocol, public_key=self.server_public_key))
-            response = await websocket.recv()
-            response = EncDecWrapper.decrypt(response, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
-            _logger.log(f"Received: {response}", 0)
-            if response == "Success":
-                _logger.log("Login successful", 0)
-                
-
-            else:
-                pass
-    
     async def on_message(self):
-        
         async def on_msg(self):
-            await self.websocket.recv()
+            msg = await self.websocket.recv()
             _logger.log(f"Received: {msg}", 0)
             return msg
         while True:
             msg = await on_msg(self)
-            
-    
-    async def send_message(self, message):
-        await self.websocket.send(EncDecWrapper.encrypt(message, self.comm_protocol, public_key=self.server_public_key))
+
+    def send_message(self, message, type="txt"):
+        # self.websocket.send(EncDecWrapper.encrypt(message, self.comm_protocol, public_key=self.server_public_key))
+        to_send = self.Message(message, datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, type, hashlib.sha256(message.encode('utf-8')).hexdigest())
+        asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(to_send.__dict__), self.comm_protocol, public_key=self.server_public_key)))
         _logger.log(f"Sent: {message}", 0)
 
 class MainWindow(QWidget):
@@ -317,7 +349,7 @@ class MainWindow(QWidget):
         self.user_creds = self.load_creds()
         _logger.log(f"User credentials: {self.user_creds}", 0)
         self.connection = ConnectionHandler(self.user_creds[0], self.user_creds[1], self.cred_flag)
-
+        self.connection.start()
         self.show()
 
     def new_chat(self):
@@ -444,8 +476,7 @@ class MainWindow(QWidget):
         self.input_message.setText("")
         if message != "":
             self.create_bubble(message, datetime.strftime(datetime.now(), "%H:%M"), self.user_creds[0])
-        self.connection.loop.run_until_complete(self.connection.send_message(message))
-
+        self.connection.send_message(message)
     def send_media_message(self):
         file_dialog = QFileDialog()
         file_dialog.setFileMode(QFileDialog.ExistingFile)
