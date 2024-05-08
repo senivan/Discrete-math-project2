@@ -1,19 +1,15 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGridLayout, QScrollArea, QPlainTextEdit, QHBoxLayout, QDialog, QFileDialog
-# from PyQt5.QtWidgets import QDesktopWidget
-import PyQt5.QtCore as QtCore
-from PyQt5.QtGui import QPixmap, QMovie
-import websockets
-# from PyQt5 import QtWebSockets
-# import tkinter as tk
-import wx
-# import websockets
-from PyQt5.QtCore import QThread, pyqtSignal
 import asyncio
 import json
 import os
 import hashlib
 import sys
 from datetime import datetime
+from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGridLayout, QScrollArea, QPlainTextEdit, QHBoxLayout, QDialog, QFileDialog
+import PyQt5.QtCore as QtCore
+from PyQt5.QtGui import QPixmap, QMovie
+import websockets
+import wx
+from PyQt5.QtCore import QThread, pyqtSignal
 from Encryption_algos import RSA, ECC, ElGamal
 from server_utils import logger
 

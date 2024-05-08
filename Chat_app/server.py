@@ -6,9 +6,9 @@
     and should be able to send and receive messages from the clients.
 """
 import asyncio
-import websockets
 import hashlib
 import json
+import websockets
 from Encryption_algos import ECC, RSA, ElGamal
 from server_utils import database, logger
 
