@@ -174,6 +174,13 @@ class Database:
             res.append(Chat(id, participants, chat_history_path, name))
             print(res[-1])
         return res
+    
+    def get_username(self, id:int):
+        self.cursor.execute('''
+            SELECT * FROM Users
+            WHERE id = ?
+            ''', (id,))
+        return self.cursor.fetchone()[1]
 
 class User:
     def __init__(self,id:int, username:str, password:str):

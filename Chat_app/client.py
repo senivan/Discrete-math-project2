@@ -235,10 +235,12 @@ class ConnectionHandler(QThread):
             if 'chat_history' in message:
                 _logger.log(f"Received chat history: {message['chat_history']}", 0)
                 self._all_messages = message['chat_history']
-                self.all_messages.emit(message['chat_history'])
-            _logger.log(f"Received: {message['data']} from {message['sender_username']} at {message['time_sent']}", 0)
-            self.message.emit(message)
-            _logger.log("Emitted message", 0)
+                self._all_messages = json.loads(self._all_messages)
+                self.all_messages.emit(self._all_messages)
+            else:
+                _logger.log(f"Received: {message['data']} from {message['sender_username']} at {message['time_sent']}", 0)
+                self.message.emit(message)
+                _logger.log("Emitted message", 0)
     
     async def _get_all_chats(self):
         msg = ConnectionHandler.Message("get_chats", datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", hashlib.sha256("get_chats".encode('utf-8')).hexdigest())

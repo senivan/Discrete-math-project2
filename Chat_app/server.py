@@ -167,10 +167,7 @@ class Server:
 
                 if message['type'] == "txt":
                     msg = EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash']
-                    # self.db.create_message(EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash'])
-                    to_write = Message(msg, message['time_sent'], message['sender_username'], message['type'], message['hash'])
-                    to_write.chat_id = message['chat_id']
-                    self.db.create_message_obj(to_write)
+                    self.db.create_message(message["data"], message["time_sent"], self.db.get_user_id(message["sender_username"]), message["chat_id"], message["type"], message["hash"])
                     _logger.log(f"Message saved to database: {message}", 0)
                     await self.send_message(message)
                 elif message['type'] == 'com':
@@ -179,7 +176,10 @@ class Server:
                         chat_id = json.loads(message['data'])['get_chat_history']
                         messages = self.db.get_all_chat_messages(chat_id)
                         _logger.log(f"Messages: {messages}", 0)
-                        to_send = {"chat_history":json.dumps([msg.__dict__ for msg in messages])}
+                        res = []
+                        for msg in messages:
+                            res.append(Message(msg.data, msg.time_sent, self.db.get_username(msg.sender_id), msg.type, msg.hash))
+                        to_send = {"chat_history":json.dumps([msg.__dict__ for msg in res])}
                         to_send = json.dumps(to_send)
                         _logger.log(f"Sending messages: {to_send}", 0)
                         await websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[websocket][1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None))
