@@ -182,6 +182,13 @@ class Database:
             ''', (id,))
         return self.cursor.fetchone()[1]
 
+    def get_chat_participants(self, chat_id:int):
+        self.cursor.execute('''
+            SELECT * FROM Chats
+            WHERE id = ?
+            ''', (chat_id,))
+        return self.cursor.fetchone()[1].split(";")
+
 class User:
     def __init__(self,id:int, username:str, password:str):
         self.id = id

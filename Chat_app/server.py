@@ -150,9 +150,13 @@ class Server:
         asyncio.get_event_loop().run_forever()
     
     async def send_message(self, message):
-        message = json.dumps(message)
-        for user in self.users:
-            await user.send(EncDecWrapper.encrypt(message, self.config.encrypt, public_key=self.users[user][1], shared_key=self.users[user][1] if self.config.encrypt == "ECC" else None))
+        message_chat = message['chat_id']
+        chat_participants = self.db.get_chat_participants(message_chat)
+        for participant in chat_participants:
+            if participant[0] in self.users.keys() and participant[0] != message['sender_username']:
+                await self.users[participant[0]][0].send(EncDecWrapper.encrypt(json.dumps(message), self.config.encrypt, public_key=self.users[participant[0]][1], shared_key=self.users[participant[0]][1] if self.config.encrypt == "ECC" else None))
+                _logger.log(f"Sent: {message} to {participant[0]}", 1)
+        
     
     async def handle_client(self, websocket):
         while True:
@@ -167,7 +171,7 @@ class Server:
 
                 if message['type'] == "txt":
                     msg = EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash']
-                    self.db.create_message(message["data"], message["time_sent"], self.db.get_user_id(message["sender_username"]), message["chat_id"], message["type"], message["hash"])
+                    self.db.create_message(msg, message["time_sent"], self.db.get_user_id(message["sender_username"]), message["chat_id"], message["type"], message["hash"])
                     _logger.log(f"Message saved to database: {message}", 0)
                     await self.send_message(message)
                 elif message['type'] == 'com':
@@ -178,6 +182,7 @@ class Server:
                         _logger.log(f"Messages: {messages}", 0)
                         res = []
                         for msg in messages:
+                            msg.data = EncDecWrapper.decrypt(msg.data, self.config.encrypt, private_key=self.keys[1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None)
                             res.append(Message(msg.data, msg.time_sent, self.db.get_username(msg.sender_id), msg.type, msg.hash))
                         to_send = {"chat_history":json.dumps([msg.__dict__ for msg in res])}
                         to_send = json.dumps(to_send)
