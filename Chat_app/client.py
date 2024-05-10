@@ -266,6 +266,14 @@ class ConnectionHandler(QThread):
         to_send = self.Message(message["data"], message["time_sent"], message["sender_username"], message["type"], message["hash"], message["chat_id"])
         _logger.log(f"Sent: {to_send}", 0)
         asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(to_send.__dict__), self.comm_protocol, public_key=self.server_public_key)))
+
+    def send_delete(self):
+        msg = ConnectionHandler.Message("delete", datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", hashlib.sha256("delete".encode('utf-8')).hexdigest())
+        asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(msg.__dict__), self.comm_protocol, public_key=self.server_public_key)))
+        self.websocket.close()
+        self.connected = False
+        self.listener.cancel()
+        _logger.log("Connection closed", 0)
 class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
@@ -404,7 +412,8 @@ class MainWindow(QWidget):
     def delete_account(self, dialog):
         confirm_dialog = QMessageBox.question(self, "Confirmation", "Are you sure you want to delete your account?", QMessageBox.Yes | QMessageBox.No)
         if confirm_dialog == QMessageBox.Yes:
-            # Delete the account logic here
+            os.remove("client_secret.json")
+            self.connection.send_delete()
             dialog.close()
         else:
             dialog.close()
