@@ -67,6 +67,7 @@ class Database:
             INSERT INTO Chats (participants, chat_history_path, name)
             VALUES (?, ?, ?)
             ''', (participants, chat_history_path, name))
+        print(participants, chat_history_path, name)
         self.db.commit()
     
     def add_chat_obj(self, chat:'Chat'):
@@ -161,6 +162,32 @@ class Database:
             DELETE FROM Messages
             ''')
         self.db.commit()
+    
+    def get_chats(self, username:str):
+        self.cursor.execute('''
+            SELECT * FROM Chats
+            WHERE participants LIKE ?
+            ''', (f"%{username}%",))
+        res = []
+        for chat in self.cursor.fetchall():
+            id, participants, chat_history_path, name = chat
+            res.append(Chat(id, participants, chat_history_path, name))
+            print(res[-1])
+        return res
+    
+    def get_username(self, id:int):
+        self.cursor.execute('''
+            SELECT * FROM Users
+            WHERE id = ?
+            ''', (id,))
+        return self.cursor.fetchone()[1]
+
+    def get_chat_participants(self, chat_id:int):
+        self.cursor.execute('''
+            SELECT * FROM Chats
+            WHERE id = ?
+            ''', (chat_id,))
+        return self.cursor.fetchone()[1].split(";")
 
 class User:
     def __init__(self,id:int, username:str, password:str):
