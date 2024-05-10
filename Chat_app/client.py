@@ -264,10 +264,18 @@ class MainWindow(QWidget):
         grid.addWidget(self.chats_wrapper, 1, 0)
 
         self.all_chats_data = {}
+
+        buttons_box = QHBoxLayout()
         self.add_chat = QPushButton("Add Chat", self)
         self.add_chat.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 15px; padding: 10px; border-radius: 10px; max-width: 450px;")
         self.add_chat.clicked.connect(self.new_chat)
-        grid.addWidget(self.add_chat, 2, 0)
+        self.account = QPushButton("Account", self)
+        self.account.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 15px; padding: 10px; border-radius: 10px; max-width: 450px;")
+        self.account.clicked.connect(self.about_account)
+        buttons_box.addWidget(self.account)
+        buttons_box.addWidget(self.add_chat)
+        
+        grid.addLayout(buttons_box, 2, 0)
 
         # self.message_box = QGridLayout()
         # self.message_box.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px;margin-left: 10 px; margin-right: 4px; padding: 10px; border-radius: 10px;")
@@ -372,6 +380,29 @@ class MainWindow(QWidget):
         # chat_name = chat_name_input.text()
         # usernames_res = usernames_input.text().split(";")
         # self.all_chats_data[chat_name] = usernames_res
+
+    def about_account(self):
+        dialog = QDialog(self)
+        dialog.setFixedSize(400, 200)
+        dialog.setWindowTitle("Account")
+        dialog.setStyleSheet("background-color: rgba(0, 0, 0, 0.9); text-align: center;")
+        layout = QVBoxLayout(dialog)
+        label = QLabel("Username: "+self.user_creds[0], dialog)
+        layout.addWidget(label)
+        label.setStyleSheet("color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; text-align: center;")
+        delete_button = QPushButton("Delete Account", dialog)
+        layout.addWidget(delete_button)
+        delete_button.setStyleSheet("background-color: #FF0000; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; margin-top: 10px;")
+        delete_button.clicked.connect(lambda: self.delete_account(dialog))
+        dialog.exec_()
+
+    def delete_account(self, dialog):
+        confirm_dialog = QMessageBox.question(self, "Confirmation", "Are you sure you want to delete your account?", QMessageBox.Yes | QMessageBox.No)
+        if confirm_dialog == QMessageBox.Yes:
+            # Delete the account logic here
+            dialog.close()
+        else:
+            dialog.close()
 
     def generate_chat(self, chat_name):
         chat = QPushButton(chat_name, self.chats_wrapper)
