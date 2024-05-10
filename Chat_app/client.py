@@ -161,6 +161,7 @@ class ConnectionHandler(QThread):
     message = pyqtSignal(dict)
     all_chats = pyqtSignal(list)
     all_messages = pyqtSignal(list)
+    gif_res = pyqtSignal(bool)
     class Message:
         def __init__(self, data, time_sent, sender_username, type, hash, chat_id=None):
             self.data = data
@@ -264,7 +265,6 @@ class ConnectionHandler(QThread):
         to_send = self.Message(message["data"], message["time_sent"], message["sender_username"], message["type"], message["hash"], message["chat_id"])
         _logger.log(f"Sent: {to_send}", 0)
         asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(to_send.__dict__), self.comm_protocol, public_key=self.server_public_key)))
-        
 class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
@@ -443,8 +443,6 @@ class MainWindow(QWidget):
             self.clear_message_box()
         
         chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
-        # for message in self.connection.get_chat_history(chat_id):
-        #     self.create_bubble(message)
 
     def generate_chat_mesasages(self):
         for button in self.chats_wrapper.findChildren(QPushButton):
@@ -483,18 +481,6 @@ class MainWindow(QWidget):
             pixmap = pixmap.scaledToWidth(600)
             self.image.setPixmap(pixmap)
             grid.addWidget(self.image, 0, 0, 0, 1)
-        elif message['type'] == "gif":
-            self.gif = QMovie()
-            self.gif_label = QLabel(self.bubble)
-            if not os.path.exists("cl_received"):
-                os.makedirs("cl_received")
-            if not os.path.exists(f"cl_received/{hashlib.sha256(msg.encode('utf-8')).hexdigest()}.gif"):
-                with open(f"cl_received/{hashlib.sha256(msg.encode('utf-8')).hexdigest()}.gif", "wb") as file:
-                    file.write(base64.b64decode(msg.encode('utf-8')))
-            self.gif.setFileName(f"cl_received/{hashlib.sha256(msg.encode('utf-8')).hexdigest()}.gif")
-            self.gif_label.setMovie(self.gif)
-            self.gif.start()
-            grid.addWidget(self.gif_label, 0, 0, 0, 1)
         elif message['type'] == "txt":
             self.message = QLabel(self.bubble)
             self.message.setWordWrap(True)
@@ -536,7 +522,7 @@ class MainWindow(QWidget):
     def send_media_message(self):
         file_dialog = QFileDialog()
         file_dialog.setFileMode(QFileDialog.ExistingFile)
-        file_dialog.setNameFilter("Images (*.png *.jpg *.jpeg *.gif)")
+        file_dialog.setNameFilter("Images (*.png *.jpg *.jpeg)")
         if file_dialog.exec_():
             selected_files = file_dialog.selectedFiles()
             # Process the selected image files here
@@ -547,14 +533,11 @@ class MainWindow(QWidget):
     def send_image(self, file):
         data = base64.b64encode(open(file, "rb").read()).decode('utf-8')
         type = file.split(".")[-1]
-        if type in ["png", "jpg", "jpeg"]:
-            type = "img"
-        else:
-            type = "gif"
+        type = "img"
         chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
         msg = {"data":data, "time_sent":datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M"), "sender_username":self.user_creds[0], "chat_id":chat_id, "type":type, "hash":hashlib.sha256(data.encode('utf-8')).hexdigest()}
         self.create_bubble(msg)
-
+        self.connection.send_message(msg)
 if __name__ == "__main__":
     app = QApplication([])
     window = MainWindow()
