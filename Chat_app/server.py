@@ -170,8 +170,7 @@ class Server:
                     continue
 
                 if message['type'] == "txt":
-                    msg = EncDecWrapper.encrypt(message['data'], self.config.encrypt, public_key=self.keys[0], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None), message['time_sent'], self.db.get_user_id(message["sender_username"]), 0, message['type'], message['hash']
-                    self.db.create_message(msg, message["time_sent"], self.db.get_user_id(message["sender_username"]), message["chat_id"], message["type"], message["hash"])
+                    self.db.create_message(message["data"], message["time_sent"], self.db.get_user_id(message["sender_username"]), message["chat_id"], message["type"], message["hash"])
                     _logger.log(f"Message saved to database: {message}", 0)
                     await self.send_message(message)
                 elif message['type'] == 'com':
@@ -182,7 +181,6 @@ class Server:
                         _logger.log(f"Messages: {messages}", 0)
                         res = []
                         for msg in messages:
-                            msg.data = EncDecWrapper.decrypt(msg.data, self.config.encrypt, private_key=self.keys[1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None)
                             res.append(Message(msg.data, msg.time_sent, self.db.get_username(msg.sender_id), msg.type, msg.hash))
                         to_send = {"chat_history":json.dumps([msg.__dict__ for msg in res])}
                         to_send = json.dumps(to_send)
