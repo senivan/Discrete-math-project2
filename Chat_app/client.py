@@ -3,6 +3,7 @@ import json
 import os
 import hashlib
 import sys
+import base64
 from datetime import datetime
 from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGridLayout, QScrollArea, QPlainTextEdit, QHBoxLayout, QDialog, QFileDialog
 import PyQt5.QtCore as QtCore
@@ -475,19 +476,20 @@ class MainWindow(QWidget):
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setSpacing(0)
-        if msg.endswith(".png") or msg.endswith(".jpg") or msg.endswith(".jpeg"):
+        if message['type'] == "img":
             self.image = QLabel(self.bubble)
-            pixmap = QPixmap(msg)
+            pixmap = QPixmap()
+            pixmap.loadFromData(base64.b64decode(msg.encode('utf-8')))
             pixmap = pixmap.scaledToWidth(600)
             self.image.setPixmap(pixmap)
             grid.addWidget(self.image, 0, 0, 0, 1)
-        elif msg.endswith(".gif"):
+        elif message['type'] == "gif":
             self.gif = QMovie(msg)
             self.gif_label = QLabel(self.bubble)
             self.gif_label.setMovie(self.gif)
             self.gif.start()
             grid.addWidget(self.gif_label, 0, 0, 0, 1)
-        else:
+        elif message['type'] == "txt":
             self.message = QLabel(self.bubble)
             self.message.setWordWrap(True)
             self.message.setText(msg)
@@ -537,7 +539,14 @@ class MainWindow(QWidget):
                 self.send_image(file)
     
     def send_image(self, file):
-        msg = {"data":file, "time_sent":datetime.strftime(datetime.now(), "%H:%M"), "sender_username":self.user_creds[0]}
+        data = base64.b64encode(open(file, "rb").read()).decode('utf-8')
+        type = file.split(".")[-1]
+        if type in ["png", "jpg", "jpeg"]:
+            type = "img"
+        else:
+            type = "gif"
+        chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
+        msg = {"data":data, "time_sent":datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M"), "sender_username":self.user_creds[0], "chat_id":chat_id, "type":type, "hash":hashlib.sha256(data.encode('utf-8')).hexdigest()}
         self.create_bubble(msg)
 
 if __name__ == "__main__":

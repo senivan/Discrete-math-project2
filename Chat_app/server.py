@@ -8,6 +8,7 @@
 import asyncio
 import hashlib
 import json
+import base64
 import websockets
 from Encryption_algos import ECC, RSA, ElGamal
 from server_utils import database, logger
