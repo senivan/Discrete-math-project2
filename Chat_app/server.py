@@ -8,8 +8,7 @@
 import asyncio
 import hashlib
 import json
-import base64
-import os
+import lzma
 import websockets
 from Encryption_algos import ECC, RSA, ElGamal
 from server_utils import database, logger
@@ -171,7 +170,7 @@ class Server:
                     _logger.log(f"Message hash mismatch: {message['data']}", 3)
                     continue
 
-                if message['type'] == "txt":
+                if message['type'] == "txt" or message['type'] == "img":
                     self.db.create_message(message["data"], message["time_sent"], self.db.get_user_id(message["sender_username"]), message["chat_id"], message["type"], message["hash"])
                     _logger.log(f"Message saved to database: {message}", 0)
                     await self.send_message(message)
@@ -272,6 +271,7 @@ if __name__ == "__main__":
     _logger = logger.Logger("./server_utils/server.log", config.log_level, True)
     _logger.log(f"Config: {config.__dict__}", 0)
     server = Server(config)
+    server.db.cleanup()
     # server.db.add_user("test1", hashlib.sha256("test1".encode('utf-8')).hexdigest())
     server.run()
 

@@ -4,10 +4,11 @@ import os
 import hashlib
 import sys
 import base64
+import lzma
 from datetime import datetime
 from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGridLayout, QScrollArea, QPlainTextEdit, QHBoxLayout, QDialog, QFileDialog
 import PyQt5.QtCore as QtCore
-from PyQt5.QtGui import QPixmap, QMovie
+from PyQt5.QtGui import QPixmap
 import websockets
 import wx
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -532,10 +533,8 @@ class MainWindow(QWidget):
     
     def send_image(self, file):
         data = base64.b64encode(open(file, "rb").read()).decode('utf-8')
-        type = file.split(".")[-1]
-        type = "img"
         chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
-        msg = {"data":data, "time_sent":datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M"), "sender_username":self.user_creds[0], "chat_id":chat_id, "type":type, "hash":hashlib.sha256(data.encode('utf-8')).hexdigest()}
+        msg = {"data":data, "time_sent":datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M"), "sender_username":self.user_creds[0], "chat_id":chat_id, "type":"img", "hash":hashlib.sha256(data.encode('utf-8')).hexdigest()}
         self.create_bubble(msg)
         self.connection.send_message(msg)
 if __name__ == "__main__":
