@@ -484,8 +484,14 @@ class MainWindow(QWidget):
             self.image.setPixmap(pixmap)
             grid.addWidget(self.image, 0, 0, 0, 1)
         elif message['type'] == "gif":
-            self.gif = QMovie(msg)
+            self.gif = QMovie()
             self.gif_label = QLabel(self.bubble)
+            if not os.path.exists("cl_received"):
+                os.makedirs("cl_received")
+            if not os.path.exists(f"cl_received/{hashlib.sha256(msg.encode('utf-8')).hexdigest()}.gif"):
+                with open(f"cl_received/{hashlib.sha256(msg.encode('utf-8')).hexdigest()}.gif", "wb") as file:
+                    file.write(base64.b64decode(msg.encode('utf-8')))
+            self.gif.setFileName(f"cl_received/{hashlib.sha256(msg.encode('utf-8')).hexdigest()}.gif")
             self.gif_label.setMovie(self.gif)
             self.gif.start()
             grid.addWidget(self.gif_label, 0, 0, 0, 1)
