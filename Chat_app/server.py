@@ -198,6 +198,11 @@ class Server:
                         chat_data = chat_data['create_chat']
                         _logger.log(f"Creating chat: {chat_data}", 0)
                         self.db.add_chat(chat_data['participants'],"", chat_data['name'])
+                    elif message['data'] == 'delete':
+                        _logger.log(f"Deleting user: {self.users[websocket][0]}", 0)
+                        self.db.delete_user(self.users[websocket][0])
+                        del self.users[websocket]
+                        break
             except websockets.exceptions.ConnectionClosedError:
                 _logger.log(f"User {self.users[websocket][0]} disconnected", 1)
                 del self.users[websocket]
