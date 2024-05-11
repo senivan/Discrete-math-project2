@@ -89,7 +89,7 @@ In the `server_config.json` file, you can change the following parameters:
     The Rabin cryptosystem is based on the difficulty of factoring large composite numbers, an NP-hard problem. It involves generating a public key from the product of two large primes and using it for encryption. Decryption relies on finding the square roots modulo the product of these primes, which can have multiple solutions. Rabin cryptosystem's security is tied to the challenge of factoring large numbers, making it theoretically secure against classical computers but potentially vulnerable to quantum computing advances.
     
     Handshake process:
-    ![image](imgs/imgs/rabin_handshake.png)
+    ![image](imgs/rabin_handshake.png)
 
     Average time used:
     - Encryption: -
