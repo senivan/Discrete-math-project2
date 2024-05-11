@@ -1,0 +1,73 @@
+# | module name: pycryptodome
+# v
+from Cryptodome.PublicKey import RSA
+
+def find_prime(bits):
+    prime = 0
+    counter = 0
+    while prime % 4 != 3:
+        prime = RSA.generate(bits).p
+        counter += 1
+    print(f"Number of retries to get big prime number: {counter}")
+    return prime
+
+def encryption(m, n):
+    # c = m^2 mod n
+    int_message = int.from_bytes(m.encode('utf-8'), "big")
+    temp = bin(int_message)
+    temp += temp[2:7]
+    temp = int(temp, 2)
+    temp =  temp ** 2 % n
+    return temp
+
+
+def decryption(a, p, q):
+    n = p * q
+    r, s = 0, 0
+    # find sqrt
+    def _3_mod_4(a, p):
+        r = pow(a, (p + 1) // 4, p)
+        return r
+
+    def _5_mod_8(a, p):
+        d = pow(a, (p - 1) // 4, p)
+        r =0
+        if d == 1:
+            r = pow(a, (p + 3) // 8, p)
+        elif d == p - 1:
+            r = 2 * a * pow(4 * a, (p - 5) // 8, p) % p
+
+        return r
+    # for p
+    if p % 4 == 3:
+        r = _3_mod_4(a, p)
+    elif p % 8 == 5:
+        r = _5_mod_8(a, p)
+    # for q
+    if q % 4 == 3:
+        s = _3_mod_4(a, q)
+    elif q % 8 == 5:
+        s = _5_mod_8(a, q)
+
+    def egcd(a, b):
+        if a == 0:
+            return b, 0, 1
+        else:
+            gcd, y, x = egcd(b % a, a)
+            return gcd, x - (b // a) * y, y
+    gcd, c, d = egcd(p, q)
+    x = (r * d * q + s * c * p) % n
+    y = (r * d * q - s * c * p) % n
+    lst = [x, n - x, y, n - y]
+
+    for mes in lst:
+        temp = bin(mes)
+        if temp[2:7] == temp[-5:]:
+            result = int(temp[:-5], 2)
+            return result.to_bytes((result.bit_length() + 7) // 8, byteorder='big').decode('utf-8')
+    return None
+def gen_keys(bits):
+    p = find_prime(bits)
+    q = find_prime(bits)
+    n = p * q
+    return n, p, q
