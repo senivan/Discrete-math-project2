@@ -71,7 +71,7 @@ In the `server_config.json` file, you can change the following parameters:
     - Key generation: < 3 
 
 - ### ElGamal algorithm
-    This algorithm is based on the Diffie-Hellman key exchange algorithm and the problom of computing discrete logorithms of cyclic groups. It's less secure than RSA and ECC+AES-128 but faster.
+    This algorithm is based on the Diffie-Hellman key exchange algorithm and the problem of computing discrete logorithms of cyclic groups. It's less secure than RSA and ECC+AES-128 but faster. Private keys of these alghoritm can be cracked but you need powerful quantum computer to crack so for now this alghorithm is pretty safe. Also it's security is corelated of hardnes of cyclic group it is based on.
 
     Handshake process:
     ![image](imgs/elgamal_handshake.png)
