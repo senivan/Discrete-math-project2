@@ -196,9 +196,10 @@ class Server:
                     elif "create_chat" in message['data']:
                         chat_data = json.loads(message['data'])
                         chat_data = chat_data['create_chat']
+                        participants = chat_data['participants'].split(";")
                         _logger.log(f"Creating chat: {chat_data}", 0)
                         self.db.add_chat(chat_data['participants'],"", chat_data['name'])
-                        for participant in chat_data['participants']:
+                        for participant in participants:
                             if participant in self.users.keys():
                                 chats = self.db.get_chats(self.users[websocket][0])
                                 to_send = json.dumps([chat.__dict__ for chat in chats])
