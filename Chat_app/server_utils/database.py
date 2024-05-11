@@ -166,13 +166,12 @@ class Database:
     def get_chats(self, username:str):
         self.cursor.execute('''
             SELECT * FROM Chats
-            WHERE participants LIKE ?
-            ''', (f"%{username}%",))
+        ''')
         res = []
         for chat in self.cursor.fetchall():
             id, participants, chat_history_path, name = chat
-            res.append(Chat(id, participants, chat_history_path, name))
-            print(res[-1])
+            if username in participants.split(";"):
+                res.append(Chat(id, participants, chat_history_path, name))
         return res
     
     def get_username(self, id:int):
