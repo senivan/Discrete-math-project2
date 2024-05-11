@@ -186,7 +186,7 @@ class ConnectionHandler(QThread):
         self.private_key = None
         self.connected = False
         self.websocket = None
-        self.server = "ws://localhost:8000"
+        self.server = "ws://74.234.5.7/"
         self._all_chats = None
         self.listener = None
         self._all_messages = None
@@ -360,8 +360,15 @@ class MainWindow(QWidget):
 
         self.show()
     
+    def clear_chats(self):
+        while self.chats.count():
+            item = self.chats.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
     def generate_chats(self, chats):
         _logger.log(f"Chats: {chats}", 0)
+        # self.clear_chats()
         for chat in chats:
             self.all_chats_data.update({chat['id']:chat['name']})
             self.generate_chat(chat['name'])
@@ -419,6 +426,10 @@ class MainWindow(QWidget):
             dialog.close()
   
     def generate_chat(self, chat_name):
+        chats = self.chats_wrapper.findChildren(QPushButton)
+        names = [chat.text() for chat in chats]
+        if chat_name in names:
+            return
         chat = QPushButton(chat_name, self.chats_wrapper)
         chat.setCheckable(True)
         chat.clicked.connect(self.chat_clicked)

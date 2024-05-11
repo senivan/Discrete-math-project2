@@ -198,6 +198,11 @@ class Server:
                         chat_data = chat_data['create_chat']
                         _logger.log(f"Creating chat: {chat_data}", 0)
                         self.db.add_chat(chat_data['participants'],"", chat_data['name'])
+                        for participant in chat_data['participants']:
+                            if participant in self.users.keys():
+                                chats = self.db.get_chats(self.users[websocket][0])
+                                to_send = json.dumps([chat.__dict__ for chat in chats])
+                                await self.users[participant][0].send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[participant][1], shared_key=self.users[participant][1] if self.config.encrypt == "ECC" else None))
                     elif message['data'] == 'delete':
                         _logger.log(f"Deleting user: {self.users[websocket][0]}", 0)
                         self.db.delete_user(self.users[websocket][0])
