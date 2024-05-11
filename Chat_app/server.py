@@ -205,9 +205,9 @@ class Server:
                             _logger.log(f"Sending chat update to {part_websocket}", 0)
                             if part_websocket in self.users.keys():
                                 _logger.log(f"Sending chat update to {self.users[part_websocket]}", 0)
-                                chats = self.db.get_chats(self.users[participant])
+                                chats = self.db.get_chats(participant)
                                 to_send = json.dumps([chat.__dict__ for chat in chats])
-                                await self.users[participant][0].send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[participant][1], shared_key=self.users[participant][1] if self.config.encrypt == "ECC" else None))
+                                await part_websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[participant][1], shared_key=self.users[participant][1] if self.config.encrypt == "ECC" else None))
                     elif message['data'] == 'delete':
                         _logger.log(f"Deleting user: {self.users[websocket][0]}", 0)
                         self.db.delete_user(self.users[websocket][0])
