@@ -336,6 +336,7 @@ class MainWindow(QWidget):
         self.input_message.setPlaceholderText("Type your message")
         self.input_message.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; margin-right: 10px; padding: 10px; border-radius: 10px;")
         self.input_message.setEnabled(False)
+        self.input_message.returnPressed.connect(self.send_message)
         grid.addWidget(self.input_message, 2, 1)
 
         self.media_button = QPushButton("Media", self)
