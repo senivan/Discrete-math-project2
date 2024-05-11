@@ -199,6 +199,7 @@ class Server:
                         participants = chat_data['participants'].split(";")
                         _logger.log(f"Creating chat: {chat_data} with {participants}", 0)
                         self.db.add_chat(chat_data['participants'],"", chat_data['name'])
+                        _logger.log(f"{self.users.keys()}", 0)
                         for participant in participants:
                             if participant in self.users.keys():
                                 _logger.log(f"Sending chat update to {participant}", 0)
