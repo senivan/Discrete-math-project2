@@ -85,3 +85,18 @@ In the `server_config.json` file, you can change the following parameters:
     - Encryption: ![image](imgs/ElGamal_enc_memory.png)
     - Decryption: ![image](imgs/ElGamal_dec_memory.png)
     - Key generation: < 2.048 bytes
+- ### Rabin algorithm
+    The Rabin cryptosystem is based on the difficulty of factoring large composite numbers, an NP-hard problem. It involves generating a public key from the product of two large primes and using it for encryption. Decryption relies on finding the square roots modulo the product of these primes, which can have multiple solutions. Rabin cryptosystem's security is tied to the challenge of factoring large numbers, making it theoretically secure against classical computers but potentially vulnerable to quantum computing advances.
+    
+    Handshake process:
+    ![image](imgs/imgs/rabin_handshake.png)
+
+    Average time used:
+    - Encryption: -
+    - Decryption: -
+    - Key generation: -
+
+    Average memory used:
+    - Encryption: -
+    - Decryption: -
+    - Key generation: -
