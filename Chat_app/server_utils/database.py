@@ -118,7 +118,7 @@ class Database:
             WHERE chat_id = ?
             ''', (chat_id,))
         res = []
-        for msg in sorted(self.cursor.fetchall(), key=lambda x: x[1])
+        for msg in sorted(self.cursor.fetchall(), key=lambda x: x[1]):
             id, data, time_sent, sender_id, chat_id, type, hash = msg
             res.append(Message(id, data, time_sent, sender_id, chat_id, type, hash))
         return res
