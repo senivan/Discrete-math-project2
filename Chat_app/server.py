@@ -197,10 +197,11 @@ class Server:
                         chat_data = json.loads(message['data'])
                         chat_data = chat_data['create_chat']
                         participants = chat_data['participants'].split(";")
-                        _logger.log(f"Creating chat: {chat_data}", 0)
+                        _logger.log(f"Creating chat: {chat_data} with {participants}", 0)
                         self.db.add_chat(chat_data['participants'],"", chat_data['name'])
                         for participant in participants:
                             if participant in self.users.keys():
+                                _logger.log(f"Sending chat update to {participant}", 0)
                                 chats = self.db.get_chats(self.users[websocket][0])
                                 to_send = json.dumps([chat.__dict__ for chat in chats])
                                 await self.users[participant][0].send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[participant][1], shared_key=self.users[participant][1] if self.config.encrypt == "ECC" else None))
