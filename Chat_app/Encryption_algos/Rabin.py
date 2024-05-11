@@ -1,14 +1,12 @@
-# | module name: pycryptodome
-# v
-from Cryptodome.PublicKey import RSA
+from RSA import KeyGen
 
 def find_prime(bits):
     prime = 0
     counter = 0
     while prime % 4 != 3:
-        prime = RSA.generate(bits).p
+        prime = KeyGen.get_big_prime(bits)
         counter += 1
-    print(f"Number of retries to get big prime number: {counter}")
+    # print(f"Number of retries to get big prime number: {counter}")
     return prime
 
 def encryption(m, n):
