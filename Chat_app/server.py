@@ -153,7 +153,7 @@ class Server:
     async def send_message(self, message):
         message_chat = message['chat_id']
         chat_participants = self.db.get_chat_participants(message_chat)
-        _loggqer.log(f"Chat participants: {chat_participants}", 1)
+        _logger.log(f"Chat participants: {chat_participants}", 1)
         for participant in chat_participants:
             part_websocket = [key for key, value in self.users.items() if value[0] == participant[0]][0]
             if part_websocket in self.users.keys() and participant != message['sender_username']:
