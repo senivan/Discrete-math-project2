@@ -235,7 +235,11 @@ class ConnectionHandler(QThread):
             message = await self.websocket.recv()
             message = EncDecWrapper.decrypt(message, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
             message = json.loads(message)
-            if 'chat_history' in message:
+            if 'Chat history path' in message:
+                _logger.log(f"Received all chats: {message}", 0)
+                self._all_chats = message
+                self.all_chats.emit(self._all_chats)
+            elif 'chat_history' in message:
                 _logger.log(f"Received chat history: {message['chat_history']}", 0)
                 self._all_messages = message['chat_history']
                 self._all_messages = json.loads(self._all_messages)
