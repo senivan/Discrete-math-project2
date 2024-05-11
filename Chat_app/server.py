@@ -153,9 +153,11 @@ class Server:
     async def send_message(self, message):
         message_chat = message['chat_id']
         chat_participants = self.db.get_chat_participants(message_chat)
+        _loggqer.log(f"Chat participants: {chat_participants}", 1)
         for participant in chat_participants:
-            if participant[0] in self.users.keys() and participant[0] != message['sender_username']:
-                await self.users[participant[0]][0].send(EncDecWrapper.encrypt(json.dumps(message), self.config.encrypt, public_key=self.users[participant[0]][1], shared_key=self.users[participant[0]][1] if self.config.encrypt == "ECC" else None))
+            part_websocket = [key for key, value in self.users.items() if value[0] == participant[0]][0]
+            if part_websocket in self.users.keys() and participant != message['sender_username']:
+                await part_websocket.send(EncDecWrapper.encrypt(json.dumps(message), self.config.encrypt, public_key=self.users[part_websocket][1], shared_key=self.users[part_websocket][1] if self.config.encrypt == "ECC" else None))
                 _logger.log(f"Sent: {message} to {participant[0]}", 1)
         
     
