@@ -399,8 +399,8 @@ class MainWindow(QWidget):
         create_button.setEnabled(False)
         usernames_input.textChanged.connect(lambda: create_button.setEnabled(True) if chat_name_input.text() and usernames_input.text() and (str(chat_name_input.text()) not in self.all_chats_data) else create_button.setEnabled(False))
         chat_name_input.textChanged.connect(lambda: create_button.setEnabled(True) if chat_name_input.text() and usernames_input.text() and (str(chat_name_input.text()) not in self.all_chats_data) else create_button.setEnabled(False))
+        _logger.log(f"Chat data: {self.all_chats_data}", 0)
         create_button.clicked.connect(lambda: self.generate_chat(chat_name_input.text()))
-        create_button.clicked.connect(lambda: self.all_chats_data.update({chat_name_input.text():usernames_input.text().split(";")}))
         create_button.clicked.connect(dialog.close)
         dialog.exec_()
         self.connection.create_chat(chat_name_input.text(), usernames_input.text().split(";")+[self.user_creds[0]])
@@ -448,9 +448,10 @@ class MainWindow(QWidget):
         self.clear_message_box()
 
         for button in self.chats_wrapper.findChildren(QPushButton):
-            if button == self.sender():
+            if button == self.sender() and button.isChecked():
                 self.selected_chat = button.text()
                 _logger.log(f"Selected chat: {self.selected_chat}", 0)
+                _logger.log(f"All chats data: {self.all_chats_data}", 0)
                 chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
                 self.connection._get_chat_history(chat_id)
                 _logger.log(f"Chat id: {chat_id}", 0)
@@ -467,7 +468,7 @@ class MainWindow(QWidget):
             self.media_button.setEnabled(False)
             self.clear_message_box()
         
-        chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
+        # chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
 
     def generate_chat_mesasages(self):
         for button in self.chats_wrapper.findChildren(QPushButton):
