@@ -201,7 +201,8 @@ class Server:
                         self.db.add_chat(chat_data['participants'],"", chat_data['name'])
                         _logger.log(f"{self.users.keys()}", 0)
                         for participant in participants:
-                            part_websocket = [key for key, value in self.users.items() if value[0] == participant]
+                            part_websocket = [key for key, value in self.users.items() if value[0] == participant][0]
+                            _logger.log(f"Sending chat update to {part_websocket}", 0)
                             if part_websocket in self.users.keys():
                                 _logger.log(f"Sending chat update to {self.users[part_websocket]}", 0)
                                 chats = self.db.get_chats(self.users[participant])
