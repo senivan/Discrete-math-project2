@@ -186,7 +186,7 @@ class ConnectionHandler(QThread):
         self.private_key = None
         self.connected = False
         self.websocket = None
-        self.server = "ws://localhost:8000"
+        self.server = "ws://74.234.5.7/"
         self._all_chats = None
         self.listener = None
         self._all_messages = None
@@ -235,7 +235,11 @@ class ConnectionHandler(QThread):
             message = await self.websocket.recv()
             message = EncDecWrapper.decrypt(message, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
             message = json.loads(message)
-            if 'chat_history' in message:
+            if 'chat_update' in message:
+                _logger.log(f"Received all chats: {message}", 0)
+                self._all_chats = message['chat_update']
+                self.all_chats.emit(self._all_chats)
+            elif 'chat_history' in message:
                 _logger.log(f"Received chat history: {message['chat_history']}", 0)
                 self._all_messages = message['chat_history']
                 self._all_messages = json.loads(self._all_messages)
@@ -300,8 +304,12 @@ class MainWindow(QWidget):
         self.chats = QVBoxLayout()
         self.chats.setAlignment(QtCore.Qt.AlignTop)
         self.chats_wrapper.setLayout(self.chats)
-        self.chats_wrapper.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 450px; margin-top: 10px;")
-        grid.addWidget(self.chats_wrapper, 1, 0)
+        # self.chats_wrapper.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 450px; margin-top: 10px;")
+        scroll1 = QScrollArea()
+        scroll1.setWidget(self.chats_wrapper)
+        scroll1.setWidgetResizable(True)
+        scroll1.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 450px; margin-top: 10px;")
+        grid.addWidget(scroll1, 1, 0)
 
         self.all_chats_data = {}
 
@@ -325,6 +333,7 @@ class MainWindow(QWidget):
         scroll = QScrollArea()
         scroll.setWidget(self.wrapper)
         scroll.setWidgetResizable(True)
+        scroll.verticalScrollBar().setValue(scroll.verticalScrollBar().maximum())
         grid.addWidget(scroll, 0, 1, 2, 3)
         
 
@@ -332,6 +341,7 @@ class MainWindow(QWidget):
         self.input_message.setPlaceholderText("Type your message")
         self.input_message.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; margin-right: 10px; padding: 10px; border-radius: 10px;")
         self.input_message.setEnabled(False)
+        self.input_message.returnPressed.connect(self.send_message)
         grid.addWidget(self.input_message, 2, 1)
 
         self.media_button = QPushButton("Media", self)
@@ -360,8 +370,15 @@ class MainWindow(QWidget):
 
         self.show()
     
+    def clear_chats(self):
+        while self.chats.count():
+            item = self.chats.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
     def generate_chats(self, chats):
         _logger.log(f"Chats: {chats}", 0)
+        # self.clear_chats()
         for chat in chats:
             self.all_chats_data.update({chat['id']:chat['name']})
             self.generate_chat(chat['name'])
@@ -388,8 +405,8 @@ class MainWindow(QWidget):
         create_button.setEnabled(False)
         usernames_input.textChanged.connect(lambda: create_button.setEnabled(True) if chat_name_input.text() and usernames_input.text() and (str(chat_name_input.text()) not in self.all_chats_data) else create_button.setEnabled(False))
         chat_name_input.textChanged.connect(lambda: create_button.setEnabled(True) if chat_name_input.text() and usernames_input.text() and (str(chat_name_input.text()) not in self.all_chats_data) else create_button.setEnabled(False))
+        _logger.log(f"Chat data: {self.all_chats_data}", 0)
         create_button.clicked.connect(lambda: self.generate_chat(chat_name_input.text()))
-        create_button.clicked.connect(lambda: self.all_chats_data.update({chat_name_input.text():usernames_input.text().split(";")}))
         create_button.clicked.connect(dialog.close)
         dialog.exec_()
         self.connection.create_chat(chat_name_input.text(), usernames_input.text().split(";")+[self.user_creds[0]])
@@ -417,8 +434,12 @@ class MainWindow(QWidget):
             dialog.close()
         else:
             dialog.close()
-  
+
     def generate_chat(self, chat_name):
+        chats = self.chats_wrapper.findChildren(QPushButton)
+        names = [chat.text() for chat in chats]
+        if chat_name in names:
+            return
         chat = QPushButton(chat_name, self.chats_wrapper)
         chat.setCheckable(True)
         chat.clicked.connect(self.chat_clicked)
@@ -433,9 +454,10 @@ class MainWindow(QWidget):
         self.clear_message_box()
 
         for button in self.chats_wrapper.findChildren(QPushButton):
-            if button == self.sender():
+            if button == self.sender() and button.isChecked():
                 self.selected_chat = button.text()
                 _logger.log(f"Selected chat: {self.selected_chat}", 0)
+                _logger.log(f"All chats data: {self.all_chats_data}", 0)
                 chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
                 self.connection._get_chat_history(chat_id)
                 _logger.log(f"Chat id: {chat_id}", 0)
@@ -452,7 +474,7 @@ class MainWindow(QWidget):
             self.media_button.setEnabled(False)
             self.clear_message_box()
         
-        chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
+        # chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
 
     def generate_chat_mesasages(self):
         for button in self.chats_wrapper.findChildren(QPushButton):

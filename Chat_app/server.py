@@ -153,10 +153,12 @@ class Server:
     async def send_message(self, message):
         message_chat = message['chat_id']
         chat_participants = self.db.get_chat_participants(message_chat)
+        _logger.log(f"Chat participants: {chat_participants}", 1)
         for participant in chat_participants:
-            if participant[0] in self.users.keys() and participant[0] != message['sender_username']:
-                await self.users[participant[0]][0].send(EncDecWrapper.encrypt(json.dumps(message), self.config.encrypt, public_key=self.users[participant[0]][1], shared_key=self.users[participant[0]][1] if self.config.encrypt == "ECC" else None))
-                _logger.log(f"Sent: {message} to {participant[0]}", 1)
+            part_websocket = [key for key, value in self.users.items() if value[0] == participant][0]
+            if part_websocket in self.users.keys() and participant != message['sender_username']:
+                await part_websocket.send(EncDecWrapper.encrypt(json.dumps(message), self.config.encrypt, public_key=self.users[part_websocket][1], shared_key=self.users[part_websocket][1] if self.config.encrypt == "ECC" else None))
+                _logger.log(f"Sent: {message} to {participant}", 1)
         
     
     async def handle_client(self, websocket):
@@ -196,8 +198,18 @@ class Server:
                     elif "create_chat" in message['data']:
                         chat_data = json.loads(message['data'])
                         chat_data = chat_data['create_chat']
-                        _logger.log(f"Creating chat: {chat_data}", 0)
+                        participants = chat_data['participants'].split(";")
+                        _logger.log(f"Creating chat: {chat_data} with {participants}", 0)
                         self.db.add_chat(chat_data['participants'],"", chat_data['name'])
+                        _logger.log(f"{self.users.keys()}", 0)
+                        for participant in participants:
+                            part_websocket = [key for key, value in self.users.items() if value[0] == participant][0]
+                            _logger.log(f"Sending chat update to {part_websocket}", 0)
+                            if part_websocket in self.users.keys():
+                                _logger.log(f"Sending chat update to {self.users[part_websocket]}", 0)
+                                chats = self.db.get_chats(participant)
+                                to_send = json.dumps({"chat_update":[chat.__dict__ for chat in chats]})
+                                await part_websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[part_websocket][1], shared_key=self.users[part_websocket][1] if self.config.encrypt == "ECC" else None))
                     elif message['data'] == 'delete':
                         _logger.log(f"Deleting user: {self.users[websocket][0]}", 0)
                         self.db.delete_user(self.users[websocket][0])
