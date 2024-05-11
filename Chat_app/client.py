@@ -304,8 +304,12 @@ class MainWindow(QWidget):
         self.chats = QVBoxLayout()
         self.chats.setAlignment(QtCore.Qt.AlignTop)
         self.chats_wrapper.setLayout(self.chats)
-        self.chats_wrapper.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 450px; margin-top: 10px;")
-        grid.addWidget(self.chats_wrapper, 1, 0)
+        # self.chats_wrapper.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 450px; margin-top: 10px;")
+        scroll1 = QScrollArea()
+        scroll1.setWidget(self.chats_wrapper)
+        scroll1.setWidgetResizable(True)
+        scroll1.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-width: 450px; margin-top: 10px;")
+        grid.addWidget(scroll1, 1, 0)
 
         self.all_chats_data = {}
 
@@ -329,6 +333,7 @@ class MainWindow(QWidget):
         scroll = QScrollArea()
         scroll.setWidget(self.wrapper)
         scroll.setWidgetResizable(True)
+        scroll.verticalScrollBar().setValue(scroll.verticalScrollBar().maximum())
         grid.addWidget(scroll, 0, 1, 2, 3)
         
 
@@ -429,7 +434,7 @@ class MainWindow(QWidget):
             dialog.close()
         else:
             dialog.close()
-  
+
     def generate_chat(self, chat_name):
         chats = self.chats_wrapper.findChildren(QPushButton)
         names = [chat.text() for chat in chats]
