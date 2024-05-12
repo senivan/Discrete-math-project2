@@ -1,4 +1,5 @@
 from Encryption_algos.RSA import KeyGen
+import json
 def find_prime(bits):
     prime = 0
     counter = 0
@@ -10,6 +11,7 @@ def find_prime(bits):
 
 def encrypt(m, public_key):
     # c = m^2 mod n
+    public_key = int(public_key)
     int_message = int.from_bytes(m.encode('utf-8'), "big")
     temp = bin(int_message)
     temp += temp[2:7]
@@ -66,7 +68,7 @@ def decrypt(a, private_key):
         if temp[2:7] == temp[-5:]:
             result = int(temp[:-5], 2)
             return result.to_bytes((result.bit_length() + 7) // 8, byteorder='big').decode('utf-8')
-    return None
+    
 def gen_keys(bits):
     p = find_prime(bits)
     q = find_prime(bits)
@@ -77,9 +79,10 @@ if __name__ == "__main__":
     private_key, public_key = gen_keys(256)
     private_key = {'p': private_key[0], 'q': private_key[1]}
     print(private_key, public_key)
-    message = "Hello world"
+    message = json.dumps({"username":"Ivan", "password":"1234", "register":"False"})
     encrypted = encrypt(message, public_key)
     print(encrypted)
     decrypted = decrypt(encrypted, private_key)
     print(decrypted)
+    print(json.loads(decrypted))
     assert message == decrypted

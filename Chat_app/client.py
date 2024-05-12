@@ -216,7 +216,7 @@ class ConnectionHandler(QThread):
         _logger.log(f"Sending: {msg}", 0)
         msg = EncDecWrapper.encrypt(msg, self.comm_protocol, public_key=self.server_public_key)
         _logger.log(f"Encrypted: {msg, type(msg)}", 0)
-        await self.websocket.send(EncDecWrapper.encrypt(msg, self.comm_protocol, public_key=self.server_public_key))
+        await self.websocket.send(msg)
         response = await self.websocket.recv()
         response = EncDecWrapper.decrypt(response, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
         _logger.log(f"Received: {response}", 0)

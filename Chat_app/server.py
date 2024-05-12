@@ -70,7 +70,7 @@ class EncDecWrapper:
         if protocol == "Rabin":
             client_key = await websocket.recv()
             client_key = json.loads(client_key)
-            _logger.log(f"Client key: {client_key}", 1)
+            # _logger.log(f"Client key: {client_key}", 1)
             await websocket.send(json.dumps(kwargs["public_key"]))
             return client_key
 
