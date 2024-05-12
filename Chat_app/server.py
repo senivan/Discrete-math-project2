@@ -288,8 +288,7 @@ if __name__ == "__main__":
     _logger = logger.Logger("./server_utils/server.log", config.log_level, True)
     _logger.log(f"Config: {config.__dict__}", 0)
     server = Server(config)
-    server.db.cleanup()
-    # server.db.add_user("test1", hashlib.sha256("test1".encode('utf-8')).hexdigest())
+    # server.db.cleanup()
     server.run()
 
     
