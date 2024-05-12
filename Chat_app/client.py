@@ -4,7 +4,6 @@ import os
 import hashlib
 import sys
 import base64
-import lzma
 from datetime import datetime
 from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QGridLayout, QScrollArea, QPlainTextEdit, QHBoxLayout, QDialog, QFileDialog
 import PyQt5.QtCore as QtCore
@@ -26,6 +25,8 @@ class EncDecWrapper:
         if protocol == "ElGamal":
             res = ElGamal.encrypt(kwargs["public_key"].values(), message)
             return json.dumps(res)
+        if protocol == "Rabin":
+            return Rabin.encrypt(message, kwargs["public_key"])
     @staticmethod
     def decrypt(encoded, protocol, **kwargs):
         if protocol == "RSA":
@@ -37,6 +38,8 @@ class EncDecWrapper:
             val = json.loads(encoded)
             c1, c2 = (val[0], val[1])
             return ElGamal.decrypt(kwargs["private_key"], c1, c2)
+        if protocol == "Rabin":
+            return Rabin.decrypt(encoded, kwargs["private_key"])
     @staticmethod
     def generate_keys(protocol):
         if protocol == "RSA":
@@ -46,6 +49,8 @@ class EncDecWrapper:
             return ECC.ECC.generate_keys()
         if protocol == "ElGamal":
             return ElGamal.generate_keys()
+        if protocol == "Rabin":
+            return Rabin.gen_keys(256)
     
     @staticmethod
     async def handshake(protocol, websocket, **kwargs):
@@ -71,6 +76,12 @@ class EncDecWrapper:
             msg = json.dumps(kwargs["public_key"])
             await websocket.send(msg)
             server_ =await websocket.recv()
+            server_ = json.loads(server_)
+            return server_
+        if protocol == "Rabin":
+            msg = json.dumps(kwargs["public_key"])
+            await websocket.send(msg)
+            server_ = await websocket.recv()
             server_ = json.loads(server_)
             return server_
 class RegiWinndow(QWidget):

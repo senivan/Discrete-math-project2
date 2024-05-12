@@ -8,17 +8,18 @@ def find_prime(bits):
     # print(f"Number of retries to get big prime number: {counter}")
     return prime
 
-def encryption(m, n):
+def encrypt(m, public_key):
     # c = m^2 mod n
     int_message = int.from_bytes(m.encode('utf-8'), "big")
     temp = bin(int_message)
     temp += temp[2:7]
     temp = int(temp, 2)
-    temp =  temp ** 2 % n
+    temp =  temp ** 2 % public_key
     return temp
 
 
-def decryption(a, p, q):
+def decrypt(a, private_key):
+    p, q = private_key
     n = p * q
     r, s = 0, 0
     # find sqrt
@@ -67,4 +68,4 @@ def gen_keys(bits):
     p = find_prime(bits)
     q = find_prime(bits)
     n = p * q
-    return n, p, q
+    return (p, q), n
