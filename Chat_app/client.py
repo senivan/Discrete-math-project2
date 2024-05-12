@@ -378,7 +378,7 @@ class MainWindow(QWidget):
 
     def generate_chats(self, chats):
         _logger.log(f"Chats: {chats}", 0)
-        # self.clear_chats()
+        self.clear_chats()
         for chat in chats:
             self.all_chats_data.update({chat['id']:chat['name']})
             self.generate_chat(chat['name'])
@@ -438,8 +438,8 @@ class MainWindow(QWidget):
     def generate_chat(self, chat_name):
         chats = self.chats_wrapper.findChildren(QPushButton)
         names = [chat.text() for chat in chats]
-        if chat_name in names:
-            return
+        # if chat_name in names:
+        #     return
         chat = QPushButton(chat_name, self.chats_wrapper)
         chat.setCheckable(True)
         chat.clicked.connect(self.chat_clicked)
@@ -500,7 +500,7 @@ class MainWindow(QWidget):
         self.username.setStyleSheet("color: #4CAF50; font-size: 18px; font-weight: bold;")
         self.bubble = QWidget()
         self.bubble.setMaximumWidth(int(self.width() // 1.7))
-        self.bubble.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px;")
+        self.bubble.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; max-height: 1000px;")
         
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
