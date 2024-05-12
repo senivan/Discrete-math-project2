@@ -15,10 +15,11 @@ def encrypt(m, public_key):
     temp += temp[2:7]
     temp = int(temp, 2)
     temp =  temp ** 2 % public_key
-    return temp
+    return str(temp)
 
 
 def decrypt(a, private_key):
+    a = int(a)
     p, q = private_key
     n = p * q
     r, s = 0, 0
@@ -69,3 +70,13 @@ def gen_keys(bits):
     q = find_prime(bits)
     n = p * q
     return (p, q), n
+
+if __name__ == "__main__":
+    private_key, public_key = gen_keys(256)
+    print(private_key, public_key)
+    message = "Hello world"
+    encrypted = encrypt(message, public_key)
+    print(encrypted)
+    decrypted = decrypt(encrypted, private_key)
+    print(decrypted)
+    assert message == decrypted
