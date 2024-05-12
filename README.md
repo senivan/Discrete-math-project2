@@ -92,11 +92,11 @@ In the `server_config.json` file, you can change the following parameters:
     ![image](imgs/rabin_handshake.png)
 
     Average time used:
-    - Encryption: -
-    - Decryption: -
-    - Key generation: -
+    - Encryption: ![image](imgs/rabin_encryption_time.png)
+    - Decryption: ![image]()
+    - Key generation 16.4371 seconds
 
     Average memory used:
-    - Encryption: -
-    - Decryption: -
-    - Key generation: -
+    - Encryption: ![image](imgs/rabin_encryption_memory.png)
+    - Decryption: ![image](imgs/rabin_decryption_time.png)
+    - Key generation: 151.93 mb
