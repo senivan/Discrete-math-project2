@@ -21,6 +21,8 @@ def encrypt(m, public_key):
 def decrypt(a, private_key):
     a = int(a)
     p, q = private_key
+    p = int(p)
+    q = int(q)
     n = p * q
     r, s = 0, 0
     # find sqrt
