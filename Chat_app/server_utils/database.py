@@ -63,6 +63,12 @@ class Database:
         return User(id, username, password)
 
     def add_chat(self, participants:str, chat_history_path:str, name:str):
+        all_users = self.cursor.execute('''
+            SELECT * FROM Users
+            ''').fetchall()
+        for participant in participants:
+            if participant not in [user[1] for user in all_users]:
+                return False
         self.cursor.execute('''
             INSERT INTO Chats (participants, chat_history_path, name)
             VALUES (?, ?, ?)

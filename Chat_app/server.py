@@ -290,5 +290,3 @@ if __name__ == "__main__":
     server = Server(config)
     # server.db.cleanup()
     server.run()
-
-    
