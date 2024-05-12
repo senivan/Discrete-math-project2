@@ -71,6 +71,7 @@ class Database:
             print(participant, [user[1] for user in all_users])
             if participant not in [user[1] for user in all_users]:
                 return False
+        participants = ";".join(participants)
         self.cursor.execute('''
             INSERT INTO Chats (participants, chat_history_path, name)
             VALUES (?, ?, ?)
