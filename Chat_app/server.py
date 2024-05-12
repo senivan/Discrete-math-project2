@@ -200,7 +200,7 @@ class Server:
                         chat_data = chat_data['create_chat']
                         participants = chat_data['participants'].split(";")
                         _logger.log(f"Creating chat: {chat_data} with {participants}", 0)
-                        self.db.add_chat(chat_data['participants'],"", chat_data['name'])
+                        self.db.add_chat(participants,"", chat_data['name'])
                         _logger.log(f"{self.users.keys()}", 0)
                         for participant in participants:
                             part_websocket = [key for key, value in self.users.items() if value[0] == participant][0]
