@@ -122,7 +122,7 @@ class Keys:
                 priv, pub = ECC.ECC.generate_keys()
             if protocol == "ElGamal":
                 priv, pub = ElGamal.generate_keys()
-            if protocol == "Raibn":
+            if protocol == "Rabin":
                 priv, pub = Rabin.gen_keys(256)
             secret[protocol] = {}
             secret[protocol]["private_key"] = priv

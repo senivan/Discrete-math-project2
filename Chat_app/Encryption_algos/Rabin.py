@@ -1,4 +1,4 @@
-from Encryption_algos.RSA import KeyGen
+from RSA import KeyGen
 import json
 def find_prime(bits):
     prime = 0
@@ -78,6 +78,7 @@ def gen_keys(bits):
 if __name__ == "__main__":
     private_key, public_key = gen_keys(256)
     private_key = {'p': private_key[0], 'q': private_key[1]}
+    public_key = str(public_key)
     print(private_key, public_key)
     message = json.dumps({"username":"Ivan", "password":"1234", "register":"False"})
     encrypted = encrypt(message, public_key)
