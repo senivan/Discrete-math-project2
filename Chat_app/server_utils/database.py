@@ -66,7 +66,9 @@ class Database:
         all_users = self.cursor.execute('''
             SELECT * FROM Users
             ''').fetchall()
+        print(all_users)
         for participant in participants:
+            print(participant, [user[1] for user in all_users])
             if participant not in [user[1] for user in all_users]:
                 return False
         self.cursor.execute('''
