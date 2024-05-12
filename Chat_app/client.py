@@ -499,7 +499,7 @@ class MainWindow(QWidget):
         self.username = QLabel(user+": ", self.wrapper1)
         self.username.setStyleSheet("color: #4CAF50; font-size: 18px; font-weight: bold;")
         self.bubble = QWidget()
-        self.bubble.setMaximumWidth(self.width() // 1.7)
+        self.bubble.setMaximumWidth(int(self.width() // 1.7))
         self.bubble.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px;")
         
         grid = QGridLayout()
