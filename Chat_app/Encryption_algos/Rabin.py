@@ -20,7 +20,7 @@ def encrypt(m, public_key):
 
 def decrypt(a, private_key):
     a = int(a)
-    p, q = private_key
+    p, q = private_key['p'], private_key['q']
     p = int(p)
     q = int(q)
     n = p * q
