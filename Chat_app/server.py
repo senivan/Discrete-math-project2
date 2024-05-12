@@ -272,6 +272,7 @@ class Server:
             login_info = EncDecWrapper.decrypt(login_info, "ElGamal", private_key=self.keys[1])
         if self.config.encrypt == "Rabin":
             login_info = EncDecWrapper.decrypt(login_info, "Rabin", private_key=self.keys[1])
+            _logger.log(f"Login info: {login_info}", 1)
         login_info = json.loads(login_info)
         if login_info['username'] in self.users.keys():
             await websocket.send(EncDecWrapper.encrypt("Fail", self.config.encrypt, public_key=client_key, shared_key=shared_secret))

@@ -75,6 +75,7 @@ def gen_keys(bits):
 
 if __name__ == "__main__":
     private_key, public_key = gen_keys(256)
+    private_key = {'p': private_key[0], 'q': private_key[1]}
     print(private_key, public_key)
     message = "Hello world"
     encrypted = encrypt(message, public_key)
