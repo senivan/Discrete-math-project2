@@ -448,6 +448,8 @@ class MainWindow(QWidget):
     
     def generate_bubbles(self, messages):
         _logger.log(f"Messages: {messages}", 0)
+        if self.selected_chat == None:
+            return
         for message in messages:
             self.create_bubble(message)
     def chat_clicked(self):
@@ -463,6 +465,7 @@ class MainWindow(QWidget):
                 _logger.log(f"Chat id: {chat_id}", 0)
             if button != self.sender():
                 button.setChecked(False)
+                self.selected_chat = None
                 button.setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
         if self.sender().isChecked():
             self.sender().setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
@@ -470,19 +473,13 @@ class MainWindow(QWidget):
             self.media_button.setEnabled(True)
         else:
             self.sender().setStyleSheet("background-color: black; color: #4CAF50; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px; text-align: left; min-height: 50px;")
+            self.selected_chat = None
             self.input_message.setEnabled(False)
             self.media_button.setEnabled(False)
             self.clear_message_box()
         
         # chat_id = list(self.all_chats_data.keys())[list(self.all_chats_data.values()).index(self.selected_chat)]
 
-    def generate_chat_mesasages(self):
-        for button in self.chats_wrapper.findChildren(QPushButton):
-            if self.sender().isChecked():
-                self.clear_message_box()
-                pass
-            else:
-                self.clear_message_box()
 
     def clear_message_box(self):
         while self.message_box.count():
@@ -491,6 +488,8 @@ class MainWindow(QWidget):
                 item.widget().deleteLater()
 
     def create_bubble(self, message):
+        if self.selected_chat == None:
+            return
         user = message['sender_username']
         msg = message['data']
         time = message['time_sent']
@@ -500,7 +499,7 @@ class MainWindow(QWidget):
         self.username = QLabel(user+": ", self.wrapper1)
         self.username.setStyleSheet("color: #4CAF50; font-size: 18px; font-weight: bold;")
         self.bubble = QWidget()
-        self.bubble.setMaximumWidth(self.width() // 2)
+        self.bubble.setMaximumWidth(self.width() // 1.7)
         self.bubble.setStyleSheet("background-color: #4CAF50; color: black; font-size: 20px; margin-left: 10px; padding: 10px; border-radius: 10px;")
         
         grid = QGridLayout()
