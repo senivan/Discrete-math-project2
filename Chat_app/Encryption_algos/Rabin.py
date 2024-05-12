@@ -1,4 +1,4 @@
-from RSA import KeyGen
+from Encryption_algos.RSA import KeyGen
 import json
 def find_prime(bits):
     prime = 0
