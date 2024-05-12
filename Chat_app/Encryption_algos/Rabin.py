@@ -69,8 +69,11 @@ def decrypt(a, private_key):
         temp = bin(mes)
         print(temp)
         # if temp[2:7] == temp[-5:]:
-        result = int(temp[:-5], 2)
-        return result.to_bytes((result.bit_length() + 7) // 8, byteorder='big').decode('utf-8')
+        try:
+            result = int(temp[:-5], 2)
+            return result.to_bytes((result.bit_length() + 7) // 8, byteorder='big').decode('utf-8')
+        except:
+            continue
     
 def gen_keys(bits):
     p = find_prime(bits)
