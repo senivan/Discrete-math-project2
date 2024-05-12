@@ -93,7 +93,7 @@ In the `server_config.json` file, you can change the following parameters:
 
     Average time used:
     - Encryption: ![image](imgs/rabin_encryption_time.png)
-    - Decryption: ![image]()
+    - Decryption: ![image](imgs/rabin_decryption_time.png)
     - Key generation 16.4371 seconds
 
     Average memory used:
