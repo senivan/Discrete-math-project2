@@ -22,11 +22,11 @@
     ```
 - ### Run the app
     ```bash
-    python server.py
+    python3 server.py
     ```
 - ### Run the client
     ```bash
-    python client.py
+    python3 client.py
     ```
 
 ## Config file
