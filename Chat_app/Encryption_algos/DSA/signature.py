@@ -3,23 +3,22 @@ The module provides a signing
 '''
 import hashlib
 import sys
-from rsa import RSA
+import RSA
 
-def sha1_hash(message):
+def sha256_hash(message):
     """
-    Computes SHA-1 hash of data
+    Computes SHA-256 hash of data
     """
     message_bytes = message.encode('utf-8')
-    sha256_hash = hashlib.sha1(message_bytes).hexdigest()
-    return sha256_hash
+    sha256_has = hashlib.sha256(message_bytes).hexdigest()
+    return sha256_has
 
-def sign(message, kod):
+def sign(message, pri_key):
     '''
     Function signs the data
     '''
-    hashed_message = sha1_hash(message)
-    print(hashed_message)
-    sign_ = RSA.encrypt(hashed_message, kod)
+    hashed_message = sha256_hash(message)
+    sign_ = RSA.encrypt(hashed_message, pri_key)
     return sign_
 
 if __name__ == '__main__':
@@ -37,5 +36,5 @@ if __name__ == '__main__':
         with open(fprivate_key, 'r', encoding='utf-8') as file_pr:
             pr_key = tuple(int(el) for el in file_pr.read()[1:-1].split(', '))
         signature = sign(data, pr_key)
-        with open('signature.txt', 'w', encoding='utf-8') as wfile:
-            wfile.write(str(signature))
+        with open('signature.txt', 'wb') as wfile:
+            wfile.write(signature)
