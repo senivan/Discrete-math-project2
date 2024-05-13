@@ -204,7 +204,7 @@ class Server:
                 # if hashlib.sha256(message['data'].encode('utf-8')).hexdigest() != message['hash']:
                 #     _logger.log(f"Message hash mismatch: {message['data']}", 3)
                 #     continue
-                if message['hash'] != DSA.sign(message['data'], self.dsa_keys[1]):
+                if not DSA.verify(message['data'], message['hash'], self.users[websocket][2]):
                     _logger.log(f"Message hash mismatch: {message['data']}", 3)
                     continue
 
