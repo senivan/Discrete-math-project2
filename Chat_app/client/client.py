@@ -260,6 +260,7 @@ class ConnectionHandler(QThread):
             message = await self.websocket.recv()
             message = EncDecWrapper.decrypt(message, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
             message = json.loads(message)
+            _logger.log(f"Received: {message}", 0)
             if 'hash' in message:
                 if not DSA.verify(message['data'], message['hash'], self.server_dsa):
                     _logger.log("Message signature is invalid", 1)

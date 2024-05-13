@@ -182,10 +182,9 @@ class Server:
         message_chat = message['chat_id']
         chat_participants = self.db.get_chat_participants(message_chat)
         _logger.log(f"Chat participants: {chat_participants}", 1)
+        message['hash'] = DSA.sign(message['data'], self.dsa_keys[1])
         for participant in chat_participants:
             try:
-                to_send = message.copy()
-                to_send['hash'] = DSA.sign(message['data'], self.dsa_keys[0])
                 part_websocket = [key for key, value in self.users.items() if value[0] == participant][0]
                 if part_websocket in self.users.keys() and participant != message['sender_username']:
                     await part_websocket.send(EncDecWrapper.encrypt(json.dumps(message), self.config.encrypt, public_key=self.users[part_websocket][1], shared_key=self.users[part_websocket][1] if self.config.encrypt == "ECC" else None))
