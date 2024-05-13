@@ -45,16 +45,16 @@ class EncDecWrapper:
     def generate_keys(protocol):
         if protocol == "RSA":
             res = RSA.generateRSAkeys()
-            dsa = RSA.generateRSAkeys()
+            dsa = RSA.generateRSAkeys(32)
             return (res[1], res[0]), (dsa[1], dsa[0])
         if protocol == "ECC":
             ecc = ECC.ECC.generate_keys()
-            dsa = RSA.generateRSAkeys()
+            dsa = RSA.generateRSAkeys(32)
             return ecc, (dsa[1], dsa[0])
 
         if protocol == "ElGamal":
             elg = ElGamal.generate_keys()
-            dsa = RSA.generateRSAkeys()
+            dsa = RSA.generateRSAkeys(32)
             return elg, (dsa[1], dsa[0])
     
     @staticmethod
@@ -302,7 +302,7 @@ class ConnectionHandler(QThread):
         asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(to_send.__dict__), self.comm_protocol, public_key=self.server_public_key)))
 
     def send_delete(self):
-        msg = ConnectionHandler.Message("delete", datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", hashlib.sha256("delete".encode('utf-8')).hexdigest())
+        msg = ConnectionHandler.Message("delete", datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", DSA.sign("delete", self.dsa_private_key))
         asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(msg.__dict__), self.comm_protocol, public_key=self.server_public_key)))
         self.websocket.close()
         self.connected = False
