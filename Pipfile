@@ -6,6 +6,10 @@ name = "pypi"
 [packages]
 
 [dev-packages]
+websockets = "*"
+pyqt5 = "*"
+pyqt5-tools = "*"
+wxpython = "*"
 
 [requires]
 python_version = "3.11"
