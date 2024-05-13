@@ -11,7 +11,7 @@ class DSA:
         Function signs the data
         '''
         hashed_message = hashlib.sha256(message.encode('utf-8')).hexdigest()
-        sign_ = RSA.encrypt(hashed_message, private_key)
+        sign_ = RSA.encrypt(hashed_message, private_key).decode()
         return sign_
     @staticmethod
     def verify(message, signature, public_key):
