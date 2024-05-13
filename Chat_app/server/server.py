@@ -191,7 +191,7 @@ class Server:
                 if part_websocket in self.users.keys() and participant != to_send['sender_username']:
                     await part_websocket.send(EncDecWrapper.encrypt(json.dumps(to_send), self.config.encrypt, public_key=self.users[part_websocket][1], shared_key=self.users[part_websocket][1] if self.config.encrypt == "ECC" else None))
                     _logger.log(f"Sent: {to_send} to {participant}", 1)
-                    _logger.log(f"Signed: {DSA.verify(to_send['data'], to_send['hash'], self.users[part_websocket][2])}", 1)
+                    _logger.log(f"Signed: {DSA.verify(to_send['data'], to_send['hash'], self.dsa_keys[1])}", 1)
             except Exception as e:
                 _logger.log(f"Error: {e}", 3)
         
