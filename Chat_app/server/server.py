@@ -184,7 +184,7 @@ class Server:
         _logger.log(f"Chat participants: {chat_participants}", 1)
         # message['hash'] = DSA.sign(message['data'], self.dsa_keys[1])
         to_send = message.copy()
-        to_send['hash'] = DSA.sign(message['data'], self.dsa_keys[1])
+        to_send['hash'] = DSA.sign(message['data'], self.dsa_keys[0])
         for participant in chat_participants:
             try:
                 part_websocket = [key for key, value in self.users.items() if value[0] == participant][0]
