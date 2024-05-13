@@ -11,7 +11,8 @@ from PyQt5.QtGui import QPixmap
 import websockets
 import wx
 from PyQt5.QtCore import QThread, pyqtSignal
-from Encryption_algos import RSA, ECC, ElGamal, DSA
+from Encryption_algos import RSA, ECC, ElGamal
+from Encryption_algos.DSA import DSA
 import logger
 
 _logger = logger.Logger("client.log", "INFO", True)

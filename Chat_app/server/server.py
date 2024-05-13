@@ -9,7 +9,8 @@ import asyncio
 import hashlib
 import json
 import websockets
-from Encryption_algos import ECC, RSA, ElGamal, DSA
+from Encryption_algos import ECC, RSA, ElGamal
+from Encryption_algos.DSA import DSA
 from server_utils import database
 import logger
 
