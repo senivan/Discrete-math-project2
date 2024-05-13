@@ -162,7 +162,7 @@ class Server:
         self.db = database.Database(self.config.db_path)
         self.users = {}
         self.keys = (Keys.get_public_key(self.config.encrypt), Keys.get_private_key(self.config.encrypt))
-        rsa = RSA.generateRSAkeys(32)
+        rsa = RSA.generateRSAkeys()
         self.dsa_keys = (rsa[1], rsa[0])
         _logger.log(f"Encryption protocol: {self.config.encrypt}", 0)
         _logger.log(f"Database path: {self.config.db_path}", 0)
@@ -185,7 +185,7 @@ class Server:
         for participant in chat_participants:
             try:
                 to_send = message.copy()
-                to_send['hash'] = DSA.sign(message['data'], self.dsa_keys[1])
+                to_send['hash'] = DSA.sign(message['data'], self.dsa_keys[0])
                 part_websocket = [key for key, value in self.users.items() if value[0] == participant][0]
                 if part_websocket in self.users.keys() and participant != message['sender_username']:
                     await part_websocket.send(EncDecWrapper.encrypt(json.dumps(message), self.config.encrypt, public_key=self.users[part_websocket][1], shared_key=self.users[part_websocket][1] if self.config.encrypt == "ECC" else None))
@@ -204,7 +204,7 @@ class Server:
                 # if hashlib.sha256(message['data'].encode('utf-8')).hexdigest() != message['hash']:
                 #     _logger.log(f"Message hash mismatch: {message['data']}", 3)
                 #     continue
-                if not DSA.verify(message['data'], message['hash'], self.users[websocket][2]):
+                if message['hash'] != DSA.sign(message['data'], self.dsa_keys[1]):
                     _logger.log(f"Message hash mismatch: {message['data']}", 3)
                     continue
 

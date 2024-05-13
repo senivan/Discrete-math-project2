@@ -45,16 +45,16 @@ class EncDecWrapper:
     def generate_keys(protocol):
         if protocol == "RSA":
             res = RSA.generateRSAkeys()
-            dsa = RSA.generateRSAkeys(32)
+            dsa = RSA.generateRSAkeys(16)
             return (res[1], res[0]), (dsa[1], dsa[0])
         if protocol == "ECC":
             ecc = ECC.ECC.generate_keys()
-            dsa = RSA.generateRSAkeys(32)
+            dsa = RSA.generateRSAkeys(16)
             return ecc, (dsa[1], dsa[0])
 
         if protocol == "ElGamal":
             elg = ElGamal.generate_keys()
-            dsa = RSA.generateRSAkeys(32)
+            dsa = RSA.generateRSAkeys(16)
             return elg, (dsa[1], dsa[0])
     
     @staticmethod
@@ -261,7 +261,7 @@ class ConnectionHandler(QThread):
             message = EncDecWrapper.decrypt(message, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
             message = json.loads(message)
             if 'hash' in message:
-                if not DSA.verify(message["data"], message["hash"], self.server_dsa):
+                if not DSA.verify(message['data'], message['hash'], self.server_dsa):
                     _logger.log("Message signature is invalid", 1)
                     continue
             if 'chat_update' in message:

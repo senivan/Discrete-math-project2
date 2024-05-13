@@ -1,6 +1,5 @@
 import hashlib
 from Encryption_algos import RSA
-
 class DSA:
     # def __init__(self, private_key, public_key):
     #     self.private_key = private_key
@@ -22,3 +21,12 @@ class DSA:
         decrypted_signature = RSA.decrypt(signature, public_key)
         return hashed_message == decrypted_signature
 
+
+if __name__ == "__main__":
+    pub, priv = RSA.generateRSAkeys()
+    message = "Hello world"
+    signature = DSA.sign(message, priv)
+    print(DSA.verify(message, signature, pub))
+    # print(DSA.verify(message, signature, priv))
+    print(DSA.verify("Hello world", signature, pub))
+    # print(DSA.verify("Hello world", signature, priv))
