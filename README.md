@@ -5,6 +5,12 @@
 ## Database schema
 ![image](imgs/db_diagram.png)
 
+# Developers
+- [Ivan Sen](https://github.com/senivan) - Team lead, server development, RSA and ECC implementation.
+- [Daniil Bykov](https://github.com/DanyaBykov) - ElGamal implementation, client development.
+- [Orest Chupa](https://github.com/ratatuiii) - Rabin implementation
+- [Edvard Student](https://github.com/EdvardStudent23) - DSA implementation
+
 ## How to run
 - ### Run pipenv
     ```bash
@@ -18,7 +24,7 @@
     ```bash
     python server.py
     ```
-- ### Run the test client
+- ### Run the client
     ```bash
     python client.py
     ```
@@ -87,6 +93,7 @@ In the `server_config.json` file, you can change the following parameters:
     - Key generation: < 2.048 bytes
 - ### Rabin algorithm
     The Rabin cryptosystem is based on the difficulty of factoring large composite numbers, an NP-hard problem. It involves generating a public key from the product of two large primes and using it for encryption. Decryption relies on finding the square roots modulo the product of these primes, which can have multiple solutions. Rabin cryptosystem's security is tied to the challenge of factoring large numbers, making it theoretically secure against classical computers but potentially vulnerable to quantum computing advances.
+    We never used this algorithm in the chat app, because it has a limit on the size of the message that can be encrypted.
     
     Handshake process:
     ![image](imgs/rabin_handshake.png)
