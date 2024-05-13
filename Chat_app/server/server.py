@@ -10,7 +10,8 @@ import hashlib
 import json
 import websockets
 from Encryption_algos import ECC, RSA, ElGamal, Rabin
-from server_utils import database, logger
+from server_utils import database
+import logger
 
 
 class EncDecWrapper:

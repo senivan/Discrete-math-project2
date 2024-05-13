@@ -12,7 +12,7 @@ import websockets
 import wx
 from PyQt5.QtCore import QThread, pyqtSignal
 from Encryption_algos import RSA, ECC, ElGamal, Rabin
-from server_utils import logger
+import logger
 
 _logger = logger.Logger("client.log", "INFO", True)
 class EncDecWrapper:
