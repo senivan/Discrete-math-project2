@@ -45,16 +45,16 @@ class EncDecWrapper:
     def generate_keys(protocol):
         if protocol == "RSA":
             res = RSA.generateRSAkeys()
-            dsa = RSA.generateRSAkeys(16)
+            dsa = RSA.generateRSAkeys()
             return (res[1], res[0]), (dsa[1], dsa[0])
         if protocol == "ECC":
             ecc = ECC.ECC.generate_keys()
-            dsa = RSA.generateRSAkeys(16)
+            dsa = RSA.generateRSAkeys()
             return ecc, (dsa[1], dsa[0])
 
         if protocol == "ElGamal":
             elg = ElGamal.generate_keys()
-            dsa = RSA.generateRSAkeys(16)
+            dsa = RSA.generateRSAkeys()
             return elg, (dsa[1], dsa[0])
     
     @staticmethod
