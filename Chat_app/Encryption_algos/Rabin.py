@@ -26,7 +26,6 @@ def decrypt(a, private_key):
     p = int(p)
     q = int(q)
     n = p * q
-    print(a)
     r, s = 0, 0
     # find sqrt
     def _3_mod_4(a, p):
@@ -64,16 +63,11 @@ def decrypt(a, private_key):
     y = (r * d * q - s * c * p) % n
     lst = [x, n - x, y, n - y]
 
-    print(lst)
     for mes in lst:
         temp = bin(mes)
-        print(temp)
-        # if temp[2:7] == temp[-5:]:
-        try:
+        if temp[2:7] == temp[-5:]:
             result = int(temp[:-5], 2)
             return result.to_bytes((result.bit_length() + 7) // 8, byteorder='big').decode('utf-8')
-        except:
-            continue
     
 def gen_keys(bits):
     p = find_prime(bits)

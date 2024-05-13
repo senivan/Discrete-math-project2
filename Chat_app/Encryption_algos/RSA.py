@@ -35,7 +35,7 @@ class KeyGen:
             return True
    
         # Set number of trials here 
-        numberOfRabinTrials = 20
+        numberOfRabinTrials = 40
         for i in range(numberOfRabinTrials): 
             round_tester = random.randrange(2, 
                         miller_rabin_candidate) 
