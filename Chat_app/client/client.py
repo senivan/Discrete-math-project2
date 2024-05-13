@@ -252,7 +252,7 @@ class ConnectionHandler(QThread):
     def create_chat(self, chat_name, participants):
         data = json.dumps({"create_chat":{"name":chat_name, "participants":";".join(participants)}})
         _logger.log(f"Sending: {data}", 0)
-        msg = self.Message(data, datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", hashlib.sha256(data.encode('utf-8')).hexdigest())
+        msg = self.Message(data, datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", DSA.sign(data, self.dsa_private_key))
         asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(msg.__dict__), self.comm_protocol, public_key=self.server_public_key)))
     
     async def listen(self):
@@ -279,7 +279,7 @@ class ConnectionHandler(QThread):
                 _logger.log("Emitted message", 0)
     
     async def _get_all_chats(self):
-        msg = ConnectionHandler.Message("get_chats", datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", hashlib.sha256("get_chats".encode('utf-8')).hexdigest())
+        msg = ConnectionHandler.Message("get_chats", datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", DSA.sign("get_chats", self.dsa_private_key))
         await self.websocket.send(EncDecWrapper.encrypt(json.dumps(msg.__dict__), self.comm_protocol, public_key=self.server_public_key))
         response = await self.websocket.recv()
         response = EncDecWrapper.decrypt(response, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
@@ -289,7 +289,7 @@ class ConnectionHandler(QThread):
     def _get_chat_history(self, chat_id):
         data = {"get_chat_history":chat_id}
         data = json.dumps(data)
-        msg = ConnectionHandler.Message(data, datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", hashlib.sha256(data.encode('utf-8')).hexdigest())
+        msg = ConnectionHandler.Message(data, datetime.now().strftime("%Y-%m-%d-%H-%M"), self.username, "com", DSA.sign(data, self.dsa_private_key))
         asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(msg.__dict__), self.comm_protocol, public_key=self.server_public_key)))
 
     def get_all_chats(self):
