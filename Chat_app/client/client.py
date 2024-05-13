@@ -11,7 +11,7 @@ from PyQt5.QtGui import QPixmap
 import websockets
 import wx
 from PyQt5.QtCore import QThread, pyqtSignal
-from Encryption_algos import RSA, ECC, ElGamal, Rabin
+from Encryption_algos import RSA, ECC, ElGamal, DSA
 import logger
 
 _logger = logger.Logger("client.log", "INFO", True)
@@ -25,8 +25,8 @@ class EncDecWrapper:
         if protocol == "ElGamal":
             res = ElGamal.encrypt(kwargs["public_key"].values(), message)
             return json.dumps(res)
-        if protocol == "Rabin":
-            return Rabin.encrypt(message, kwargs["public_key"])
+        # if protocol == "Rabin":
+        #     return Rabin.encrypt(message, kwargs["public_key"])
     @staticmethod
     def decrypt(encoded, protocol, **kwargs):
         if protocol == "RSA":
@@ -38,19 +38,23 @@ class EncDecWrapper:
             val = json.loads(encoded)
             c1, c2 = (val[0], val[1])
             return ElGamal.decrypt(kwargs["private_key"], c1, c2)
-        if protocol == "Rabin":
-            return Rabin.decrypt(encoded, kwargs["private_key"])
+        # if protocol == "Rabin":
+        #     return Rabin.decrypt(encoded, kwargs["private_key"])
     @staticmethod
     def generate_keys(protocol):
         if protocol == "RSA":
             res = RSA.generateRSAkeys()
-            return res[1], res[0]
+            dsa = RSA.generateRSAkeys()
+            return (res[1], res[0]), (dsa[1], dsa[0])
         if protocol == "ECC":
-            return ECC.ECC.generate_keys()
+            ecc = ECC.ECC.generate_keys()
+            dsa = RSA.generateRSAkeys()
+            return ecc, (dsa[1], dsa[0])
+
         if protocol == "ElGamal":
-            return ElGamal.generate_keys()
-        if protocol == "Rabin":
-            return Rabin.gen_keys(256)
+            elg = ElGamal.generate_keys()
+            dsa = RSA.generateRSAkeys()
+            return elg, (dsa[1], dsa[0])
     
     @staticmethod
     async def handshake(protocol, websocket, **kwargs):
@@ -59,7 +63,10 @@ class EncDecWrapper:
             await websocket.send(msg)
             server_ = await websocket.recv()
             server_ = json.loads(server_)
-            return server_
+            await websocket.send(json.dumps(kwargs["dsa_public_key"]))
+            server_dsapub = await websocket.recv()
+            server_dsapub = json.loads(server_dsapub)
+            return server_, server_dsapub
         if protocol == "ECC":
             msg = json.dumps(kwargs["public_key"], cls=ECC.PointEncoder)
             await websocket.send(msg)
@@ -71,19 +78,19 @@ class EncDecWrapper:
             priv = kwargs["private_key"]
             shared_secret = ECC.ECC.derive_key_function(priv, server_)
             _logger.log(f"Shared secret:{shared_secret}", 1)
-            return shared_secret
+            await websocket.send(json.dumps(kwargs["dsa_public_key"]))
+            server_dsapub = await websocket.recv()
+            server_dsapub = json.loads(server_dsapub)
+            return shared_secret, server_dsapub
         if protocol == "ElGamal":
             msg = json.dumps(kwargs["public_key"])
             await websocket.send(msg)
             server_ =await websocket.recv()
             server_ = json.loads(server_)
-            return server_
-        if protocol == "Rabin":
-            msg = json.dumps(kwargs["public_key"])
-            await websocket.send(msg)
-            server_ = await websocket.recv()
-            server_ = json.loads(server_)
-            return server_
+            await websocket.send(json.dumps(kwargs["dsa_public_key"]))
+            server_dsapub = await websocket.recv()
+            server_dsapub = json.loads(server_dsapub)
+            return server_, server_dsapub
 class RegiWinndow(QWidget):
     def __init__(self):
         super().__init__()
@@ -198,7 +205,7 @@ class ConnectionHandler(QThread):
         self.connected = False
         self.websocket = None
         self.server = "ws://74.234.5.7/"
-        self._all_chats = Noned
+        self._all_chats = None
         self.listener = None
         self._all_messages = None
     async def connect_to_server(self):
@@ -206,8 +213,12 @@ class ConnectionHandler(QThread):
         await self.websocket.send("Initiate handshake")
         self.comm_protocol = await self.websocket.recv()
         self.comm_protocol = json.loads(self.comm_protocol)
-        self.private_key, self.public_key = EncDecWrapper.generate_keys(self.comm_protocol)
-        self.server_public_key = await EncDecWrapper.handshake(self.comm_protocol, self.websocket, public_key=self.public_key, private_key=self.private_key)
+        comm_keys, dsa_keys = EncDecWrapper.generate_keys(self.comm_protocol)
+        self.public_key = comm_keys[1]
+        self.private_key = comm_keys[0]
+        self.dsa_public_key = dsa_keys[1]
+        self.dsa_private_key = dsa_keys[0]
+        self.server_public_key, self.server_dsa = await EncDecWrapper.handshake(self.comm_protocol, self.websocket, public_key=self.public_key, private_key=self.private_key)
         self.connected = True
         _logger.log(f"Server public key: {self.server_public_key}", 0)
         _logger.log(f"Client public key: {self.public_key}", 0)
@@ -248,6 +259,10 @@ class ConnectionHandler(QThread):
             message = await self.websocket.recv()
             message = EncDecWrapper.decrypt(message, self.comm_protocol, private_key=self.private_key, public_key=self.server_public_key)
             message = json.loads(message)
+            if 'hash' in message:
+                if not DSA.verify(message["data"], message["hash"], self.server_dsa):
+                    _logger.log("Message signature is invalid", 1)
+                    continue
             if 'chat_update' in message:
                 _logger.log(f"Received all chats: {message}", 0)
                 self._all_chats = message['chat_update']
@@ -281,6 +296,7 @@ class ConnectionHandler(QThread):
 
     def send_message(self, message):
         to_send = self.Message(message["data"], message["time_sent"], message["sender_username"], message["type"], message["hash"], message["chat_id"])
+        to_send.hash = DSA.sign(to_send.data, self.dsa_private_key)
         _logger.log(f"Sent: {to_send}", 0)
         asyncio.run(self.websocket.send(EncDecWrapper.encrypt(json.dumps(to_send.__dict__), self.comm_protocol, public_key=self.server_public_key)))
 
