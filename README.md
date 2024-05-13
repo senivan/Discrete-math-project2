@@ -60,7 +60,7 @@ In the `server_config.json` file, you can change the following parameters:
     - Decryption: ![image](imgs/ECC_dec_memory.png)
     - Key generation: 16.384 bfytes
 - ### RSA algorithm
-    Here we useRSA to generate key pairs and then encrypt the message using the public key. The message is then decrypted using the private key. It's faster than ECC+AES-128 but less secure.
+    Here we use RSA to generate key pairs and then encrypt the message using the public key. The message is then decrypted using the private key. It's faster than ECC+AES-128 but less secure.
     It's one of the most used algorithms in the world. It relies on the difficulty of factoring large numbers. However, with the advent of quantum computers, it's security is in question, because of Shor's algorithm.
 
     Handshake process:

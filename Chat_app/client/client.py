@@ -198,7 +198,7 @@ class ConnectionHandler(QThread):
         self.connected = False
         self.websocket = None
         self.server = "ws://74.234.5.7/"
-        self._all_chats = None
+        self._all_chats = Noned
         self.listener = None
         self._all_messages = None
     async def connect_to_server(self):
