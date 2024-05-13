@@ -218,7 +218,7 @@ class ConnectionHandler(QThread):
         self.private_key = comm_keys[0]
         self.dsa_public_key = dsa_keys[1]
         self.dsa_private_key = dsa_keys[0]
-        self.server_public_key, self.server_dsa = await EncDecWrapper.handshake(self.comm_protocol, self.websocket, public_key=self.public_key, private_key=self.private_key)
+        self.server_public_key, self.server_dsa = await EncDecWrapper.handshake(self.comm_protocol, self.websocket, public_key=self.public_key, private_key=self.private_key, dsa_public_key=self.dsa_public_key, dsa_private_key=self.dsa_private_key)
         self.connected = True
         _logger.log(f"Server public key: {self.server_public_key}", 0)
         _logger.log(f"Client public key: {self.public_key}", 0)
