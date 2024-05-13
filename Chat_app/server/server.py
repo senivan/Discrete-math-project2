@@ -162,7 +162,7 @@ class Server:
         self.db = database.Database(self.config.db_path)
         self.users = {}
         self.keys = (Keys.get_public_key(self.config.encrypt), Keys.get_private_key(self.config.encrypt))
-        rsa = RSA.generateRSAkeys()
+        rsa = RSA.generateRSAkeys(32)
         self.dsa_keys = (rsa[1], rsa[0])
         _logger.log(f"Encryption protocol: {self.config.encrypt}", 0)
         _logger.log(f"Database path: {self.config.db_path}", 0)
