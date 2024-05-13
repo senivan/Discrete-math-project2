@@ -30,7 +30,6 @@ if __name__ == '__main__':
         file_data = sys.argv[1]
         fpublic_key = sys.argv[2]
         fprivate_key = sys.argv[3]
-        print(file_data)
         with open(file_data, 'r', encoding='utf-8') as doc1:
             data = doc1.read()
         with open(fpublic_key, 'r', encoding='utf-8') as file_pub:
