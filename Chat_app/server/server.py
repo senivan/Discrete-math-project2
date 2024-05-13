@@ -264,14 +264,14 @@ class Server:
         client_key = None
         shared_secret = None
         if self.config.encrypt == "RSA":
-            client_key, client_dsa = await EncDecWrapper.handshake("RSA", websocket, public_key=self.keys[0])
+            client_key, client_dsa = await EncDecWrapper.handshake("RSA", websocket, public_key=self.keys[0], dsa_pub=self.dsa_keys[0])
             _logger.log(f"Client key: {client_key}", 1)
         if self.config.encrypt == "ECC":
-            shared_secret, client_dsa = await EncDecWrapper.handshake("ECC", websocket, public_key=self.keys[0], private_key=self.keys[1])
+            shared_secret, client_dsa = await EncDecWrapper.handshake("ECC", websocket, public_key=self.keys[0], private_key=self.keys[1], dsa_pub=self.dsa_keys[0])
             shared_secret = shared_secret[:16]
             _logger.log(f"Shared secret: {shared_secret}", 1)
         if self.config.encrypt == "ElGamal":
-            client_key, client_dsa = await EncDecWrapper.handshake("ElGamal", websocket, public_key=self.keys[0])
+            client_key, client_dsa = await EncDecWrapper.handshake("ElGamal", websocket, public_key=self.keys[0], dsa_pub=self.dsa_keys[0])
             _logger.log(f"Client key: {client_key}", 1)
         login_info = await websocket.recv()
         if self.config.encrypt == "RSA":
