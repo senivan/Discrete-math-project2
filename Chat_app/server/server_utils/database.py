@@ -3,7 +3,7 @@ class Database:
     def __init__(self):
         self.db = mysql.connector.connect(
             host="localhost",
-            user="azureuser",
+            user="root",
             password=""
         )
         self.cursor = self.db.cursor()
