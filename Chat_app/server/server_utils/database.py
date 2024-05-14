@@ -4,7 +4,8 @@ class Database:
         self.db = mysql.connector.connect(
             host="localhost",
             user="root",
-            password="password"
+            password="password",
+            database="kryptos_app"
         )
         self.cursor = self.db.cursor()
         self.init_db()
