@@ -1,8 +1,11 @@
-import sqlite3
-
+import mysql.connector
 class Database:
-    def __init__(self, db_path:str):
-        self.db = sqlite3.connect(db_path)
+    def __init__(self):
+        self.db = mysql.connector.connect(
+            host="localhost",
+            user="azureuser",
+            password=""
+        )
         self.cursor = self.db.cursor()
         self.init_db()
     
