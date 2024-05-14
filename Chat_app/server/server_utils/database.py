@@ -7,7 +7,7 @@ class Database:
             password="password",
             database="kryptos_app"
         )
-        self.cursor = self.db.cursor()
+        self.cursor = self.db.cursor(buffered=True)
         self.init_db()
     
     def init_db(self):
