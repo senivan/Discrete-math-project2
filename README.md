@@ -12,6 +12,17 @@
 - [Edvard Student](https://github.com/EdvardStudent23) - DSA implementation
 
 ## How to run
+- ### Pre-requisites
+    - Python 3.8 or higher
+    - Pipenv
+    - Git
+- ### Clone the repository
+    ```bash
+    git clone https://github.com/senivan/Discrete-math-project2.git
+- ### Change directory
+    ```bash
+    cd Discrete-math-project2
+    ```
 - ### Run pipenv
     ```bash
     pipenv shell
@@ -20,14 +31,30 @@
     ```bash
     pipenv install
     ```
-- ### Run the app
+- ### Run the server
     ```bash
+    cd Chat_app/server
     python3 server.py
     ```
 - ### Run the client
     ```bash
+    cd Chat_app/client
     python3 client.py
     ```
+
+- ### If you see this error:
+    ```bash
+    FileNotFoundError: [Errno 2] No such file or directory: './server_utils/server_secret.json'
+    ```
+    You need to install the cryptography library manually:
+    ```bash
+    touch server_utils/server_secret.json
+    ```
+    And in the `server_utils/server_secret.json` file, add the following:
+    ```json
+    {}
+    ```
+    Then run the server again.
 
 ## Config file
 In the `server_config.json` file, you can change the following parameters:
