@@ -220,7 +220,7 @@ class Server:
         def send_helper_sync(message, participant):
             asyncio.run(send_helper(message, participant))
         async def com_handler(message):
-            if message in self.requests_cache:
+            if message in self.requests_cache.cache.keys():
                 await websocket.send(EncDecWrapper.encrypt(self.requests_cache.get(message), self.config.encrypt, public_key=self.users[websocket][1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None))
             elif "get_chat_history" in message['data']:
                 _logger.log(f"Getting chat history", 0)
