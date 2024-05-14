@@ -16,6 +16,7 @@
     - Python 3.8 or higher
     - Pipenv
     - Git
+    - For the server: mysql-server
 - ### Clone the repository
     ```bash
     git clone https://github.com/senivan/Discrete-math-project2.git
@@ -33,6 +34,10 @@
     ```
 - ### Run the server
     ```bash
+    mysql -u root -p
+    ```
+    ```sql
+    CREATE DATABASE kryptos_app;
     cd Chat_app/server
     python3 server.py
     ```
