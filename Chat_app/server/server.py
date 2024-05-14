@@ -8,10 +8,11 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import json
+import hashlib
 import websockets
 from Encryption_algos import ECC, RSA, ElGamal
 from Encryption_algos.DSA import DSA
-from server_utils import database
+from server_utils import database, cacher
 import logger
 
 
@@ -166,6 +167,7 @@ class Server:
         self.dsa_keys = (rsa[1], rsa[0])
         self.thread_pool = ThreadPoolExecutor()
         self.requests = []
+        self.requests_cache = cacher.Cache(500)
         _logger.log(f"Encryption protocol: {self.config.encrypt}", 0)
         _logger.log(f"Database path: {self.config.db_path}", 0)
         _logger.log(f"Host: {self.config.host}", 0)
@@ -218,7 +220,9 @@ class Server:
         def send_helper_sync(message, participant):
             asyncio.run(send_helper(message, participant))
         async def com_handler(message):
-            if "get_chat_history" in message['data']:
+            if message in self.requests_cache:
+                await websocket.send(EncDecWrapper.encrypt(self.requests_cache.get(message), self.config.encrypt, public_key=self.users[websocket][1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None))
+            elif "get_chat_history" in message['data']:
                 _logger.log(f"Getting chat history", 0)
                 chat_id = json.loads(message['data'])['get_chat_history']
                 messages = self.db.get_all_chat_messages(chat_id)
@@ -230,12 +234,14 @@ class Server:
                 to_send = json.dumps(to_send)
                 _logger.log(f"Sending messages: {to_send}", 0)
                 await websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[websocket][1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None))
+                self.requests_cache[message] = to_send
             elif message['data'] == "get_chats":
                 chats = self.db.get_chats(message['sender_username'])
                 _logger.log(f"Chats: {chats}", 0)
                 to_send = json.dumps([chat.__dict__ for chat in chats])
                 _logger.log(f"Sending chats: {to_send}", 0)
                 await websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[websocket][1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None))
+                self.requests_cache[message] = to_send
             elif "create_chat" in message['data']:
                 chat_data = json.loads(message['data'])
                 chat_data = chat_data['create_chat']
