@@ -44,26 +44,26 @@ class Database:
     def add_user(self, username:str, password:str):
         self.cursor.execute('''
             INSERT INTO Users (username, password)
-            VALUES (?, ?)
+            VALUES (%s, %s)
             ''', (username, password))
         self.db.commit()
         return True
     def add_user_obj(self, user:'User'):
         self.cursor.execute('''
             INSERT INTO Users (username, password)
-            VALUES (?, ?)
+            VALUES (%s, %s)
             ''', (user.username, user.password))
         self.db.commit()
     def delete_user(self, username:str):
         self.cursor.execute('''
             DELETE FROM Users
-            WHERE username = ?
+            WHERE username = %s
             ''', (username,))
         self.db.commit()
     def get_user(self, username:str):
         self.cursor.execute('''
             SELECT * FROM Users
-            WHERE username = ?
+            WHERE username = %s
             ''', (username,))
         id, username, password = self.cursor.fetchone()
         return User(id, username, password)
@@ -80,7 +80,7 @@ class Database:
         participants = ";".join(participants)
         self.cursor.execute('''
             INSERT INTO Chats (participants, chat_history_path, name)
-            VALUES (?, ?, ?)
+            VALUES (%s, %s, %s)
             ''', (participants, chat_history_path, name))
         print(participants, chat_history_path, name)
         self.db.commit()
@@ -88,20 +88,20 @@ class Database:
     def add_chat_obj(self, chat:'Chat'):
         self.cursor.execute('''
             INSERT INTO Chats (participants, chat_history_path, name)
-            VALUES (?, ?, ?)
+            VALUES (%s, %s, %s)
             ''', (chat.participants, chat.chat_history_path, chat.name))
         self.db.commit()
 
     def delete_chat(self, chat_id:int):
         self.cursor.execute('''
             DELETE FROM Chats
-            WHERE id = ?
+            WHERE id = %s
             ''', (chat_id,))
         self.db.commit()
     def get_chat(self, chat_id:int):
         self.cursor.execute('''
             SELECT * FROM Chats
-            WHERE id = ?
+            WHERE id = %s
             ''', (chat_id,))
         id, participants, chat_history_path, name = self.cursor.fetchone()
         return Chat(id, participants, chat_history_path, name)
@@ -109,28 +109,28 @@ class Database:
     def create_message(self, data:str, time_sent:str, sender_id:int, chat_id:int, type:int, hash:str):
         self.cursor.execute('''
             INSERT INTO Messages (data, time_sent, sender_id, chat_id, type, hash)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
             ''', (data, time_sent, sender_id, chat_id, type, hash))
         self.db.commit()
     
     def create_message_obj(self, message:'Message'):
         self.cursor.execute('''
             INSERT INTO Messages (data, time_sent, sender_id, chat_id, type, hash)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
             ''', (message.data, message.time_sent, message.sender_id, message.chat_id, message.type, message.hash))
         self.db.commit()
 
     def delete_message(self, message_id:int):
         self.cursor.execute('''
             DELETE FROM Messages
-            WHERE id = ?
+            WHERE id = %s
             ''', (message_id,))
         self.db.commit()
     
     def get_messages(self, chat_id:int):
         self.cursor.execute('''
             SELECT * FROM Messages
-            WHERE chat_id = ?
+            WHERE chat_id = %s
             ''', (chat_id,))
         res = []
         for msg in sorted(self.cursor.fetchall(), key=lambda x: x[1]):
@@ -140,7 +140,7 @@ class Database:
     
     def get_all_chat_messages(self, chat_id:int):
         self.cursor.execute('''
-            SELECT * FROM Messages where chat_id = ?
+            SELECT * FROM Messages where chat_id = %s
             ''', (chat_id,))
         res = []
         for msg in self.cursor.fetchall():
@@ -152,7 +152,7 @@ class Database:
         print(username, password)
         self.cursor.execute('''
             SELECT * FROM Users
-            WHERE username = ?
+            WHERE username = %s
             ''', (username,))
         possible_user = self.cursor.fetchone()
         if possible_user is None:
@@ -162,7 +162,7 @@ class Database:
     def get_user_id(self, username:str):
         self.cursor.execute('''
             SELECT * FROM Users
-            WHERE username = ?
+            WHERE username = %s
             ''', (username,))
         return self.cursor.fetchone()[0]
     
@@ -192,14 +192,14 @@ class Database:
     def get_username(self, id:int):
         self.cursor.execute('''
             SELECT * FROM Users
-            WHERE id = ?
+            WHERE id = %s
             ''', (id,))
         return self.cursor.fetchone()[1]
 
     def get_chat_participants(self, chat_id:int):
         self.cursor.execute('''
             SELECT * FROM Chats
-            WHERE id = ?
+            WHERE id = %s
             ''', (chat_id,))
         return self.cursor.fetchone()[1].split(";")
 
