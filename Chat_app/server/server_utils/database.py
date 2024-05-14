@@ -31,14 +31,14 @@ class Database:
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS Messages (
                 id int(11) NOT NULL AUTO_INCREMENT,
-                data TEXT NOT NULL,
+                data BLOB NOT NULL,
                 time_sent TEXT NOT NULL,
                 sender_id INTEGER NOT NULL,
                 chat_id INTEGER NOT NULL,
                 FOREIGN KEY (sender_id) REFERENCES Users(id),
                 FOREIGN KEY (chat_id) REFERENCES Chats(id),
                 type varchar(20) NOT NULL,
-                hash varchar(700) NOT NULL,
+                hash varchar(70000) NOT NULL,
                 PRIMARY KEY (id)
             )
                 ''')
@@ -139,7 +139,7 @@ class Database:
         res = []
         for msg in sorted(self.cursor.fetchall(), key=lambda x: x[1]):
             id, data, time_sent, sender_id, chat_id, type, hash = msg
-            res.append(Message(id, data, time_sent, sender_id, chat_id, type, hash))
+            res.append(Message(id, data.decode(), time_sent, sender_id, chat_id, type, hash))
         return res
     
     def get_all_chat_messages(self, chat_id:int):
@@ -149,7 +149,7 @@ class Database:
         res = []
         for msg in self.cursor.fetchall():
             id, data, time_sent, sender_id, chat_id, type, hash = msg
-            res.append(Message(id, data, time_sent, sender_id, chat_id, type, hash))
+            res.append(Message(id, data.decode(), time_sent, sender_id, chat_id, type, hash))
         return res
     
     def check_user(self, username:str, password:str):
