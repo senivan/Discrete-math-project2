@@ -140,5 +140,14 @@ In the `server_config.json` file, you can change the following parameters:
     - Decryption: ![image](imgs/rabin_decryption_time.png)
     - Key generation: 151.93 mb
 
+### Digital signature algorithm (DSA)
+    A digital signature is a mathematical technique used to validate the authenticity and integrity of a message, software, or digital document. 
+
+    - Key Generation Algorithms: Digital signature is electronic signatures, which assure that the message was sent by a particular sender. While performing digital transactions authenticity and integrity should be assured, otherwise, the data can be altered or someone can also act as if he was the sender and expect a reply.
+
+    - Signing Algorithms: To create a digital signature, signing algorithms like email programs create a one-way hash of the electronic data which is to be signed. The signing algorithm then encrypts the hash value using the private key (signature key). This encrypted hash along with other information like the hashing algorithm is the digital signature. This digital signature is appended with the data and sent to the verifier. The reason for encrypting the hash instead of the entire message or document is that a hash function converts any arbitrary input into a much shorter fixed-length value. This saves time as now instead of signing a long message a shorter hash value has to be signed and moreover hashing is much faster than signing.
+
+    - Signature Verification Algorithms : Verifier receives Digital Signature along with the data. It then uses Verification algorithm to process on the digital signature and the public key (verification key) and generates some value. It also applies the same hash function on the received data and generates a hash value. If they both are equal, then the digital signature is valid else it is invalid.
+
 # Conclusion
 ECC is one of the most secure algorithms, but it's slower and uses more memory. DSA is a good substitution for plain hash validation, we find it invaluable. RSA is the most used algorithm in the world, but in our opinion with advencment in quantum computing it's security is in question. ElGamal is a good algorithm for small messages, but it's less secure than RSA and ECC. We couldn't use Rabin algorithm in our chat app, because it has a limit on the size of the message that can be encrypted.
