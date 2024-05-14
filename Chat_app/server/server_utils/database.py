@@ -72,9 +72,10 @@ class Database:
         return User(id, username, password)
 
     def add_chat(self, participants:str, chat_history_path:str, name:str):
-        all_users = self.cursor.execute('''
+        self.cursor.execute('''
             SELECT * FROM Users
-            ''').fetchall()
+            ''')
+        all_users = self.cursor.fetchall()
         print(all_users)
         for participant in participants:
             print(participant, [user[1] for user in all_users])
