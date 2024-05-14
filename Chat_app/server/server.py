@@ -6,7 +6,7 @@
     and should be able to send and receive messages from the clients.
 """
 import asyncio
-import hashlib
+from concurrent.futures import ThreadPoolExecutor
 import json
 import websockets
 from Encryption_algos import ECC, RSA, ElGamal
@@ -164,6 +164,8 @@ class Server:
         self.keys = (Keys.get_public_key(self.config.encrypt), Keys.get_private_key(self.config.encrypt))
         rsa = RSA.generateRSAkeys(32)
         self.dsa_keys = (rsa[1], rsa[0])
+        self.thread_pool = ThreadPoolExecutor()
+        self.requests = []
         _logger.log(f"Encryption protocol: {self.config.encrypt}", 0)
         _logger.log(f"Database path: {self.config.db_path}", 0)
         _logger.log(f"Host: {self.config.host}", 0)
@@ -197,6 +199,55 @@ class Server:
         
     
     async def handle_client(self, websocket):
+        async def txt_img_hadler(message):
+            self.db.create_message(message["data"], message["time_sent"], self.db.get_user_id(message["sender_username"]), message["chat_id"], message["type"], message["hash"])
+            _logger.log(f"Message saved to database: {message}", 0)
+            await self.send_message(message)
+            self.requests.remove(message)
+        async def com_handler(message):
+            if "get_chat_history" in message['data']:
+                _logger.log(f"Getting chat history", 0)
+                chat_id = json.loads(message['data'])['get_chat_history']
+                messages = self.db.get_all_chat_messages(chat_id)
+                _logger.log(f"Messages: {messages}", 0)
+                res = []
+                for msg in messages:
+                    res.append(Message(msg.data, msg.time_sent, self.db.get_username(msg.sender_id), msg.type, msg.hash))
+                to_send = {"chat_history":json.dumps([msg.__dict__ for msg in res])}
+                to_send = json.dumps(to_send)
+                _logger.log(f"Sending messages: {to_send}", 0)
+                await websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[websocket][1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None))
+            elif message['data'] == "get_chats":
+                chats = self.db.get_chats(message['sender_username'])
+                _logger.log(f"Chats: {chats}", 0)
+                to_send = json.dumps([chat.__dict__ for chat in chats])
+                _logger.log(f"Sending chats: {to_send}", 0)
+                await websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[websocket][1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None))
+            elif "create_chat" in message['data']:
+                chat_data = json.loads(message['data'])
+                chat_data = chat_data['create_chat']
+                participants = chat_data['participants'].split(";")
+                _logger.log(f"Creating chat: {chat_data} with {participants}", 0)
+                self.db.add_chat(participants,"", chat_data['name'])
+                _logger.log(f"{self.users.keys()}", 0)
+                for participant in participants:
+                    try:
+                        part_websocket = [key for key, value in self.users.items() if value[0] == participant][0]
+                        _logger.log(f"Sending chat update to {part_websocket}", 0)
+                        if part_websocket in self.users.keys():
+                            _logger.log(f"Sending chat update to {self.users[part_websocket]}", 0)
+                            chats = self.db.get_chats(participant)
+                            to_send = json.dumps({"chat_update":[chat.__dict__ for chat in chats]})
+                            await part_websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[part_websocket][1], shared_key=self.users[part_websocket][1] if self.config.encrypt == "ECC" else None))
+                    except Exception as e:
+                        _logger.log(f"Error: {e}", 3)
+                
+            elif message['data'] == 'delete':
+                _logger.log(f"Deleting user: {self.users[websocket][0]}", 0)
+                self.db.delete_user(self.users[websocket][0])
+                del self.users[websocket]
+            
+            self.requests.remove(message)
         while True:
             try:
                 message = await websocket.recv()
@@ -209,54 +260,11 @@ class Server:
                 if not DSA.verify(message['data'], message['hash'], self.users[websocket][2]):
                     _logger.log(f"Message hash mismatch: {message['data']}", 3)
                     continue
-
+                self.requests.append(message)
                 if message['type'] == "txt" or message['type'] == "img":
-                    self.db.create_message(message["data"], message["time_sent"], self.db.get_user_id(message["sender_username"]), message["chat_id"], message["type"], message["hash"])
-                    _logger.log(f"Message saved to database: {message}", 0)
-                    await self.send_message(message)
+                    self.thread_pool.submit(txt_img_hadler, message)                    
                 elif message['type'] == 'com':
-                    if "get_chat_history" in message['data']:
-                        _logger.log(f"Getting chat history", 0)
-                        chat_id = json.loads(message['data'])['get_chat_history']
-                        messages = self.db.get_all_chat_messages(chat_id)
-                        _logger.log(f"Messages: {messages}", 0)
-                        res = []
-                        for msg in messages:
-                            res.append(Message(msg.data, msg.time_sent, self.db.get_username(msg.sender_id), msg.type, msg.hash))
-                        to_send = {"chat_history":json.dumps([msg.__dict__ for msg in res])}
-                        to_send = json.dumps(to_send)
-                        _logger.log(f"Sending messages: {to_send}", 0)
-                        await websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[websocket][1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None))
-                    elif message['data'] == "get_chats":
-                        chats = self.db.get_chats(message['sender_username'])
-                        _logger.log(f"Chats: {chats}", 0)
-                        to_send = json.dumps([chat.__dict__ for chat in chats])
-                        _logger.log(f"Sending chats: {to_send}", 0)
-                        await websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[websocket][1], shared_key=self.users[websocket][1] if self.config.encrypt == "ECC" else None))
-                    elif "create_chat" in message['data']:
-                        chat_data = json.loads(message['data'])
-                        chat_data = chat_data['create_chat']
-                        participants = chat_data['participants'].split(";")
-                        _logger.log(f"Creating chat: {chat_data} with {participants}", 0)
-                        self.db.add_chat(participants,"", chat_data['name'])
-                        _logger.log(f"{self.users.keys()}", 0)
-                        for participant in participants:
-                            try:
-                                part_websocket = [key for key, value in self.users.items() if value[0] == participant][0]
-                                _logger.log(f"Sending chat update to {part_websocket}", 0)
-                                if part_websocket in self.users.keys():
-                                    _logger.log(f"Sending chat update to {self.users[part_websocket]}", 0)
-                                    chats = self.db.get_chats(participant)
-                                    to_send = json.dumps({"chat_update":[chat.__dict__ for chat in chats]})
-                                    await part_websocket.send(EncDecWrapper.encrypt(to_send, self.config.encrypt, public_key=self.users[part_websocket][1], shared_key=self.users[part_websocket][1] if self.config.encrypt == "ECC" else None))
-                            except Exception as e:
-                                _logger.log(f"Error: {e}", 3)
-                        
-                    elif message['data'] == 'delete':
-                        _logger.log(f"Deleting user: {self.users[websocket][0]}", 0)
-                        self.db.delete_user(self.users[websocket][0])
-                        del self.users[websocket]
-                        break
+                    self.thread_pool.submit(com_handler, message)
             except websockets.exceptions.ConnectionClosedError:
                 _logger.log(f"User {self.users[websocket][0]} disconnected", 1)
                 del self.users[websocket]
