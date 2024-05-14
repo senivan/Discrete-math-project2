@@ -37,8 +37,8 @@ class Database:
                 chat_id INTEGER NOT NULL,
                 FOREIGN KEY (sender_id) REFERENCES Users(id),
                 FOREIGN KEY (chat_id) REFERENCES Chats(id),
-                type INTEGER NOT NULL,
-                hash TEXT NOT NULL,
+                type varchar(20) NOT NULL,
+                hash varchar(700) NOT NULL,
                 PRIMARY KEY (id)
             )
                 ''')
