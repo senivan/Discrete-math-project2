@@ -361,11 +361,11 @@ class MainWindow(QWidget):
         self.message_box = QVBoxLayout()
         self.message_box.setAlignment(QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft)
         self.wrapper.setLayout(self.message_box)
-        scroll = QScrollArea()
-        scroll.setWidget(self.wrapper)
-        scroll.setWidgetResizable(True)
-        scroll.verticalScrollBar().setValue(scroll.verticalScrollBar().maximum())
-        grid.addWidget(scroll, 0, 1, 2, 3)
+        self.scroll = QScrollArea()
+        self.scroll.setWidget(self.wrapper)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.verticalScrollBar().rangeChanged.connect(lambda: self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum()))
+        grid.addWidget(self.scroll, 0, 1, 2, 3)
         
 
         self.input_message = QLineEdit(self)
@@ -483,6 +483,7 @@ class MainWindow(QWidget):
             return
         for message in messages:
             self.create_bubble(message)
+        self.scroll.verticalScrollBar().rangeChanged.connect(lambda: self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum()))
     def chat_clicked(self):
         self.clear_message_box()
 
@@ -557,6 +558,7 @@ class MainWindow(QWidget):
         self.message_box1.addWidget(self.bubble)
         self.wrapper1.setLayout(self.message_box1)
         self.message_box.addWidget(self.wrapper1)
+        self.scroll.verticalScrollBar().rangeChanged.connect(lambda: self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum()))
 
     def load_creds(self):
         _logger.log("Loading credentials", 0)
