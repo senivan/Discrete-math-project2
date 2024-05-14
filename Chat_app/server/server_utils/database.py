@@ -13,17 +13,17 @@ class Database:
     def init_db(self):
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS Users (
-                id INTEGER PRIMARY KEY,
-                username TEXT NOT NULL,
-                password TEXT NOT NULL
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                username varchar(20) NOT NULL,
+                password varchar(260) NOT NULL
             )
                 ''')
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS Chats (
-                id INTEGER PRIMARY KEY,
-                participants TEXT NOT NULL,
-                chat_history_path TEXT NOT NULL, 
-                name TEXT NOT NULL
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                participants varchar(300) NOT NULL,
+                chat_history_path varchar(1) NOT NULL, 
+                name varchar(30) NOT NULL
             )
                 ''')
         self.cursor.execute('''
@@ -31,8 +31,10 @@ class Database:
                 id INTEGER PRIMARY KEY,
                 data TEXT NOT NULL,
                 time_sent TEXT NOT NULL,
-                sender_id FOREIGN_KEY REFERENCES Users(id),
-                chat_id FOREIGN_KEY REFERENCES Chats(id),
+                sender_id INTEGER NOT NULL,
+                chat_id INTEGER NOT NULL,
+                FOREIGN KEY (sender_id) REFERENCES Users(id),
+                FOREIGN KEY (chat_id) REFERENCES Chats(id),
                 type INTEGER NOT NULL,
                 hash TEXT NOT NULL
             )
