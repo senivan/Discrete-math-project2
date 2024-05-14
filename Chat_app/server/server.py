@@ -159,7 +159,7 @@ class Config:
 class Server:
     def __init__(self, config:'Config'):
         self.config = config
-        self.db = database.Database(self.config.db_path)
+        self.db = database.Database()
         self.users = {}
         self.keys = (Keys.get_public_key(self.config.encrypt), Keys.get_private_key(self.config.encrypt))
         rsa = RSA.generateRSAkeys(32)
