@@ -248,6 +248,11 @@ class Server:
                 del self.users[websocket]
             
             self.requests.remove(message)
+        
+        def txt_img_handler_sync(message):
+            asyncio.run(txt_img_hadler(message))
+        def com_handler_sync(message):
+            asyncio.run(com_handler(message))
         while True:
             try:
                 message = await websocket.recv()
@@ -262,9 +267,9 @@ class Server:
                     continue
                 self.requests.append(message)
                 if message['type'] == "txt" or message['type'] == "img":
-                    self.thread_pool.submit(await txt_img_hadler, message)                    
+                    self.thread_pool.submit(txt_img_handler_sync, message)                    
                 elif message['type'] == 'com':
-                    self.thread_pool.submit(await com_handler, message)
+                    self.thread_pool.submit(com_handler_sync, message)
             except websockets.exceptions.ConnectionClosedError:
                 _logger.log(f"User {self.users[websocket][0]} disconnected", 1)
                 del self.users[websocket]
