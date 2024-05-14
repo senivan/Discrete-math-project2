@@ -107,3 +107,6 @@ In the `server_config.json` file, you can change the following parameters:
     - Encryption: ![image](imgs/rabin_encryption_memory.png)
     - Decryption: ![image](imgs/rabin_decryption_time.png)
     - Key generation: 151.93 mb
+
+# Conclusion
+ECC is one of the most secure algorithms, but it's slower and uses more memory. DSA is a good substitution for plain hash validation, we find it invaluable. RSA is the most used algorithm in the world, but in our opinion with advencment in quantum computing it's security is in question. ElGamal is a good algorithm for small messages, but it's less secure than RSA and ECC. We couldn't use Rabin algorithm in our chat app, because it has a limit on the size of the message that can be encrypted.
