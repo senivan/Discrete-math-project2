@@ -262,9 +262,9 @@ class Server:
                     continue
                 self.requests.append(message)
                 if message['type'] == "txt" or message['type'] == "img":
-                    self.thread_pool.submit(txt_img_hadler, message)                    
+                    self.thread_pool.submit(await txt_img_hadler, message)                    
                 elif message['type'] == 'com':
-                    self.thread_pool.submit(com_handler, message)
+                    self.thread_pool.submit(await com_handler, message)
             except websockets.exceptions.ConnectionClosedError:
                 _logger.log(f"User {self.users[websocket][0]} disconnected", 1)
                 del self.users[websocket]
